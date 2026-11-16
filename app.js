@@ -593,8 +593,8 @@ async function bindEquip() {
   const key = [`武器 **${eq.weapons.length}** 件 · 防具 **${eq.armor.length}** 套`, `轻弩、重弩排在最前面`];
   if (rel.length) key.push(`⚠ 容易搞混：${rel.map(r => `**${r.label}**`).join("、")}的装备放在「别搞混」里`);
   if (!eq.weapons.length) key.splice(1, 1, `**这只怪物没有武器**（只有防具）`);
-  const tabs = `<div class="seg" id="eqTabs"><button data-t="w" class="${S.eqTab === "w" ? "on" : ""}">武器 ${eq.weapons.length}</button><button data-t="a" class="${S.eqTab === "a" ? "on" : ""}">防具 ${eq.armor.length}</button>${rel.length ? `<button data-t="r" class="${S.eqTab === "r" ? "on" : ""}">⚠ 别搞混 ${relCount}</button>` : ""}</div>`;
-  const chips = S.eqTab === "w" && types.length > 1 ? `<div class="seg" id="eqTypes"><button data-ty="" class="${!S.eqType ? "on" : ""}">全部</button>${types.map(t => `<button data-ty="${t}" class="${S.eqType === t ? "on" : ""}">${eq.weapons.find(w => w.type === t).typeZh}</button>`).join("")}</div>` : "";
+  const tabs = `<div class="seg" id="eqTabs"><button data-t="w" class="${S.eqTab === "w" ? "on" : ""}" aria-pressed="${S.eqTab === "w"}">武器 ${eq.weapons.length}</button><button data-t="a" class="${S.eqTab === "a" ? "on" : ""}" aria-pressed="${S.eqTab === "a"}">防具 ${eq.armor.length}</button>${rel.length ? `<button data-t="r" class="${S.eqTab === "r" ? "on" : ""}" aria-pressed="${S.eqTab === "r"}">⚠ 别搞混 ${relCount}</button>` : ""}</div>`;
+  const chips = S.eqTab === "w" && types.length > 1 ? `<div class="seg" id="eqTypes"><button data-ty="" class="${!S.eqType ? "on" : ""}" aria-pressed="${!S.eqType}">全部</button>${types.map(t => `<button data-ty="${t}" class="${S.eqType === t ? "on" : ""}" aria-pressed="${S.eqType === t}">${eq.weapons.find(w => w.type === t).typeZh}</button>`).join("")}</div>` : "";
   let body = "";
   if (S.eqTab === "w") body = ws.length ? `<div class="eqs">${ws.map(weaponCard).join("")}</div>` : `<div class="todo">这只怪物没有可以制作的武器。${rel.length ? "名字相近的武器在「⚠ 别搞混」里。" : ""}</div>`;
   else if (S.eqTab === "a") body = eq.armor.length ? `<div class="eqs">${eq.armor.map(armorCard).join("")}</div>` : `<div class="todo">没有找到防具。</div>`;
