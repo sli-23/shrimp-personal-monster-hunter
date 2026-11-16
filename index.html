@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>轻弩 × 原初形态爵银龙 · 伤害与打法手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14110f; --ink2:#1b1714; --ink3:#231e1a; --line:#3a302a; --line2:#4d4037;
+  --paper:#e8dcc4; --paper2:#b9ab92; --paper3:#857a68;
+  --blood:#b3202a; --blood2:#e0414b; --gold:#d4a54a; --gold2:#f0cf7a; --ok:#7fae7a;
+  --serif:"Noto Serif SC","Songti SC",serif; --sans:"Noto Sans SC","PingFang SC",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.65 var(--sans);
+  background-image:radial-gradient(1200px 600px at 80% -10%,rgba(179,32,42,.16),transparent 60%),
+                   radial-gradient(900px 500px at -10% 30%,rgba(212,165,74,.06),transparent 60%);
+  background-attachment:fixed}
+a{color:var(--gold2)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--paper3)}
+.unv{display:inline-block;font:500 11px/1 var(--sans);color:var(--blood2);border:1px dashed rgba(224,65,75,.6);padding:3px 5px;border-radius:2px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+.guess{color:var(--gold);border-color:rgba(212,165,74,.6)}
+
+/* ---------- header ---------- */
+header.hero{border-bottom:1px solid var(--line);padding:34px 0 26px;position:relative;overflow:hidden}
+header.hero::after{content:"";position:absolute;right:-60px;top:-40px;width:520px;height:520px;background:url(assets/icons/malzeno_primordial.png) center/contain no-repeat;opacity:.08;filter:grayscale(.3);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:132px 1fr auto;gap:26px;align-items:center}
+.hero img.mon{width:132px;height:132px;filter:drop-shadow(0 6px 20px rgba(179,32,42,.35))}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.18em;color:var(--blood2);text-transform:uppercase}
+h1{font:900 40px/1.15 var(--serif);margin:8px 0 6px;letter-spacing:.02em}
+h1 small{font:500 17px var(--serif);color:var(--paper2);margin-left:10px}
+.alt{color:var(--paper3);font-size:13px}
+.tags{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--paper2)}
+.weak{display:flex;gap:14px;align-items:center}
+.weak span{display:inline-flex;align-items:center;gap:4px}
+.weak img{width:20px;height:20px}
+.stars{color:var(--gold);letter-spacing:1px;font-size:12px}
+.stars.x{color:var(--paper3)}
+.hero-side{text-align:right;font-size:13px;color:var(--paper2)}
+.hero-side select{margin-top:6px}
+
+nav.toc{position:sticky;top:0;z-index:20;background:rgba(20,17,15,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:4px;overflow:auto}
+nav.toc a{color:var(--paper2);text-decoration:none;font:500 13px/1 var(--sans);padding:13px 12px;border-bottom:2px solid transparent;white-space:nowrap}
+nav.toc a:hover{color:var(--paper);border-bottom-color:var(--blood)}
+nav.toc a b{font:600 11px var(--mono);color:var(--blood2);margin-right:6px}
+
+/* ---------- sections ---------- */
+section{padding:46px 0 10px}
+.sec-h{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:20px}
+.sec-h .no{font:600 13px var(--mono);color:var(--blood2)}
+.sec-h h2{font:700 26px/1.2 var(--serif);margin:0}
+.sec-h p{margin:0 0 0 auto;color:var(--paper3);font-size:13px;max-width:520px;text-align:right}
+.panel{background:var(--ink2);border:1px solid var(--line);border-radius:3px;padding:18px}
+.panel h3{font:700 16px var(--serif);margin:0 0 10px;color:var(--paper)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+label{font-size:13px;color:var(--paper2)}
+select,input[type=number]{background:var(--ink);color:var(--paper);border:1px solid var(--line2);border-radius:2px;padding:5px 7px;font:13px var(--mono)}
+input[type=number]{width:80px}
+select:focus,input:focus{outline:1px solid var(--blood2)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:3px;overflow:hidden}
+.seg button{background:transparent;color:var(--paper2);border:0;border-right:1px solid var(--line2);padding:7px 12px;font:500 13px var(--sans);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.seg button:last-child{border-right:0}
+.seg button img{width:16px;height:16px}
+.seg button.on{background:var(--blood);color:#fff}
+.seg button:hover:not(.on){background:var(--ink3);color:var(--paper)}
+.btn{background:transparent;color:var(--gold2);border:1px solid rgba(212,165,74,.5);border-radius:3px;padding:6px 12px;font:500 13px var(--sans);cursor:pointer}
+.btn:hover{background:rgba(212,165,74,.12)}
+
+/* ---------- formula ---------- */
+.chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:14px 0 4px}
+.step{background:var(--ink);border:1px solid var(--line);padding:10px 12px;min-width:104px;border-radius:2px}
+.step .t{font-size:12px;color:var(--paper3)}
+.step .v{font:600 20px var(--mono);color:var(--paper)}
+.step .s{font:11px var(--mono);color:var(--paper3)}
+.step.res{border-color:var(--blood);background:rgba(179,32,42,.12)}
+.step.res .v{color:var(--gold2)}
+.op{display:flex;align-items:center;padding:0 7px;color:var(--blood2);font:600 18px var(--mono)}
+.glossary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.glossary div{border-left:2px solid var(--blood);padding:2px 0 2px 10px;font-size:13px;color:var(--paper2)}
+.glossary b{display:block;color:var(--paper);font:700 14px var(--serif);margin-bottom:2px}
+.formula-line{font:13px var(--mono);color:var(--paper2);background:var(--ink);border:1px dashed var(--line2);padding:10px 12px;margin-top:10px;overflow:auto;white-space:nowrap}
+.formula-line em{color:var(--gold2);font-style:normal}
+
+/* ---------- map ---------- */
+.mapgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:18px}
+.mapimg{position:relative;width:100%;aspect-ratio:1358/644;background:radial-gradient(60% 70% at 45% 55%,rgba(212,165,74,.10),transparent 70%)}
+.mapimg img.render{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.6));transition:filter .3s}
+.mapimg.st1 img.render,.mapimg.st2 img.render,.mapimg.st3 img.render{filter:drop-shadow(0 0 18px rgba(224,65,75,.45)) drop-shadow(0 10px 24px rgba(0,0,0,.6))}
+.hs{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;border:0;background:none;padding:0;color:#fff}
+.hs .dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font:700 16px var(--mono);border:2px solid rgba(12,10,9,.85);box-shadow:0 0 0 2px rgba(232,220,196,.35),0 4px 12px rgba(0,0,0,.6);transition:transform .15s}
+.hs .lb{margin-top:3px;font:600 11.5px var(--sans);background:rgba(12,10,9,.78);padding:1px 6px;border-radius:2px;white-space:nowrap}
+.hs:hover .dot{transform:scale(1.12)}
+.hs.sel .dot{box-shadow:0 0 0 3px var(--gold2),0 0 18px rgba(240,207,122,.6)}
+.hs.weak .dot{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(240,207,122,.5),0 0 0 rgba(240,207,122,0)}50%{box-shadow:0 0 0 2px rgba(240,207,122,.9),0 0 16px rgba(240,207,122,.7)}}
+.hs.sel.weak .dot{animation:none;box-shadow:0 0 0 3px var(--gold2),0 0 18px rgba(240,207,122,.6)}
+.legend{display:flex;align-items:center;gap:8px;font:11px var(--mono);color:var(--paper3);margin-top:8px}
+.legend .bar{flex:1;height:8px;border-radius:2px}
+.ctrls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{font:500 12px var(--sans);color:var(--paper3);border-bottom-color:var(--line2);white-space:nowrap}
+td.num{white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+tr.selrow td{background:rgba(212,165,74,.08)}
+.hzcell{font:600 13px var(--mono);text-align:center !important;color:#fff;border:1px solid var(--ink2)}
+.hzcell.cur{outline:2px solid var(--gold2);outline-offset:-2px}
+.detail .big{font:700 26px var(--serif)}
+.detail .row{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 12px;font-size:13px;color:var(--paper2)}
+.detail .row b{font-family:var(--mono);color:var(--paper)}
+.top3{display:grid;gap:8px}
+.top3 .it{display:grid;grid-template-columns:28px 34px 1fr auto;gap:8px;align-items:center;background:var(--ink);border:1px solid var(--line);padding:6px 10px;border-radius:2px}
+.top3 .rk{font:700 16px var(--mono);color:var(--blood2)}
+.ammoimg{width:28px;height:28px;image-rendering:auto}
+.state-note{font-size:12.5px;color:var(--paper3);margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+
+/* ---------- calc + ranking ---------- */
+.calcgrid{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
+.calc{position:sticky;top:58px}
+.calc .f{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;padding:5px 0;border-bottom:1px dotted var(--line)}
+.calc .f:last-child{border-bottom:0}
+.calc .grp{font:600 11px var(--mono);color:var(--blood2);letter-spacing:.12em;margin:12px 0 2px}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.rank td .barwrap{background:var(--ink);height:8px;border-radius:2px;min-width:90px}
+.rank td .barwrap i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blood),var(--gold))}
+.rank .nm{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.rank .nt{display:block;white-space:normal;margin:2px 0 0 36px}
+.rf{white-space:nowrap;font:600 10px var(--mono);color:var(--gold2);border:1px solid rgba(212,165,74,.5);padding:1px 4px;border-radius:2px}
+.noweap td{opacity:.45}
+.note-s{font-size:11.5px;color:var(--paper3)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.summary>div{background:var(--ink);border:1px solid var(--line);padding:10px 12px;border-radius:2px}
+.summary .t{font-size:12px;color:var(--paper3)}
+.summary .v{font:700 18px var(--serif)}
+.summary .v .mono{font-size:15px;color:var(--gold2)}
+
+/* ---------- phases ---------- */
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.phase{background:var(--ink2);border:1px solid var(--line);border-top:3px solid var(--c);padding:14px;border-radius:2px}
+.phase h4{font:700 18px var(--serif);margin:0 0 2px}
+.phase .idx{font:600 11px var(--mono);color:var(--c)}
+.phase p{font-size:13px;color:var(--paper2);margin:6px 0}
+.phase ul{margin:4px 0 8px;padding-left:18px;font-size:12.5px;color:var(--paper2)}
+.phase .lbl{font:600 11px var(--mono);letter-spacing:.1em;color:var(--paper3);margin-top:10px}
+.phase .win li{color:var(--gold2)}
+.phase .rng{background:var(--ink);border-left:2px solid var(--c);padding:6px 8px;font-size:12.5px;margin-top:8px}
+.flow{display:flex;align-items:center;gap:10px;font:12px var(--mono);color:var(--paper3);margin:0 0 14px;flex-wrap:wrap}
+.flow b{color:var(--paper);font-family:var(--serif);font-size:14px}
+.status-row{display:grid;grid-template-columns:90px 1fr 210px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.status-row .nm{display:flex;gap:8px;align-items:center;font-weight:500}
+.status-row img{width:22px;height:22px}
+.track{position:relative;height:22px;background:var(--ink);border:1px solid var(--line);border-radius:2px}
+.track{height:30px}
+.track i{position:absolute;top:0;bottom:0;left:0;border-right:2px solid var(--blood2)}
+.track i.t1{background:rgba(179,32,42,.6)} .track i.t2{background:rgba(179,32,42,.32)} .track i.t3{background:rgba(179,32,42,.16)}
+.track span{position:absolute;top:7px;font:600 10.5px var(--mono);color:#fff;transform:translateX(calc(-100% - 4px))}
+
+/* ---------- builds ---------- */
+.builds{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.build{background:var(--ink2);border:1px solid var(--line);padding:16px;border-radius:2px;display:flex;flex-direction:column}
+.build h4{font:700 18px var(--serif);margin:0}
+.build .w{font-size:12.5px;color:var(--paper3);margin:2px 0 8px}
+.build .st{font:12px var(--mono);color:var(--gold2);margin-bottom:8px}
+.build .sk{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--paper2);margin-bottom:10px}
+.build .sk span::before{content:"◆ ";color:var(--blood);font-size:9px}
+.build p{font-size:13px;color:var(--paper2);flex:1}
+
+/* ---------- videos ---------- */
+.vgroup{margin-bottom:22px}
+.vgroup h3{font:700 16px var(--serif);margin:0 0 10px}
+.vids{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.vid{display:block;background:var(--ink2);border:1px solid var(--line);border-radius:3px;overflow:hidden;text-decoration:none;color:var(--paper);transition:border-color .15s, transform .15s}
+.vid:hover{border-color:var(--blood2);transform:translateY(-2px)}
+.vid .th{position:relative;aspect-ratio:16/9;background:#000}
+.vid .th img{width:100%;height:100%;object-fit:cover;display:block}
+.vid .th .len{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.8);font:600 11px var(--mono);padding:1px 5px;border-radius:2px}
+.vid .th .star{position:absolute;left:6px;top:6px;background:var(--blood);color:#fff;font:700 11px var(--sans);padding:2px 6px;border-radius:2px}
+.vid .th .lang{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.8);font:600 11px var(--sans);padding:1px 5px;border-radius:2px}
+.vid .bd{padding:9px 11px 11px}
+.vid .tt{font:600 13.5px/1.4 var(--sans);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid .ch{font-size:11.5px;color:var(--paper3);margin-top:3px}
+.vid .why{font-size:12px;color:var(--gold2);margin-top:5px}
+footer{margin-top:50px;border-top:1px solid var(--line);padding:26px 0 50px;font-size:12.5px;color:var(--paper3)}
+footer ol{padding-left:18px}
+footer li{margin:3px 0}
+
+@media (max-width:1050px){
+  .mapgrid,.calcgrid,.grid2{grid-template-columns:1fr}
+  .phases,.builds{grid-template-columns:1fr 1fr}
+  .glossary{grid-template-columns:1fr 1fr}
+  .calc{position:static}
+  .hero-grid{grid-template-columns:90px 1fr}
+  .hero img.mon{width:90px;height:90px}
+  .hero-side{grid-column:1/-1;text-align:left}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <img class="mon" id="monIcon" alt="原初形态爵银龙">
+    <div>
+      <div class="kicker">Hunter's Notebook · Light Bowgun · MHR:Sunbreak</div>
+      <h1 id="monName"></h1>
+      <div class="alt" id="monAlt"></div>
+      <div class="tags">
+        <span id="monType"></span>
+        <span class="weak" id="weak"></span>
+      </div>
+    </div>
+    <div class="hero-side">
+      <div>任务</div>
+      <select id="quest"></select>
+      <div class="mono muted" style="margin-top:6px" id="hpLine"></div>
+      <div class="muted" style="margin-top:4px;font-size:11.5px">数据：MHRice / Kiranico v16.0.0</div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#formula"><b>01</b>伤害怎么算</a>
+  <a href="#map"><b>02</b>打哪里</a>
+  <a href="#ammo"><b>03</b>用什么弹</a>
+  <a href="#phase"><b>04</b>状态与阶段</a>
+  <a href="#builds"><b>05</b>推荐配装</a>
+  <a href="#videos"><b>06</b>视频</a>
+  <a href="#sources"><b>07</b>来源与未验证</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- 01 formula -->
+<section id="formula">
+  <div class="sec-h"><span class="no">§01</span><h2>伤害怎么算</h2><p>选一种弹和一个部位，看一发子弹的伤害是怎么一步步算出来的。数值跟着下面的计算器联动。</p></div>
+  <div class="panel">
+    <div class="ctrls">
+      <label>弹药 <select id="fAmmo"></select></label>
+      <label><input type="checkbox" id="fRF"> 速射</label>
+      <span class="muted" style="font-size:13px">部位 / 状态：<b id="fPart" style="color:var(--paper)"></b></span>
+    </div>
+    <div class="chain" id="chainRaw"></div>
+    <div class="chain" id="chainEle"></div>
+    <div class="formula-line" id="fLine"></div>
+    <div class="glossary">
+      <div><b>真实攻击</b>武器面板攻击 + 攻击技能。崛起没有武器倍率，面板上显示的就是真实攻击。</div>
+      <div><b>动作值 (MV)</b>每种弹自带的倍率。例如 LV3通常弹 34、LV2贯穿弹 每段 7、灭龙弹 48。速射时每发 ×0.7。</div>
+      <div><b>肉质</b>部位的软硬，0–100。子弹看「弹」这一列，斩裂弹的刃看「斩」。<b style="display:inline;color:var(--gold2)">≥45</b> 才算弱点，弱点特效才生效。</div>
+      <div><b>会心</b>会心率越高越常暴击。暴击伤害 ×1.25，超会心可提高到 ×1.40。负会心 ×0.75。这里用期望值计算。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 map -->
+<section id="map">
+  <div class="sec-h"><span class="no">§02</span><h2>打哪里 · 肉质图</h2><p>点击部位查看详情。切换怪物状态，弱点会从头移到前肢。</p></div>
+  <div class="ctrls">
+    <div class="seg" id="stateSeg"></div>
+    <div class="seg" id="colSeg"></div>
+  </div>
+  <div class="mapgrid">
+    <div class="panel">
+      <div class="mapimg" id="dragon"><img class="render" src="assets/img/primordial_render.png" alt="原初形态爵银龙"></div>
+      <div class="note-s" style="margin-top:6px">◎ 金色闪动 = 弱点（弹肉质 ≥45）。点击圆点切换部位。</div>
+      <div class="legend"><span>软</span><div class="bar" id="legendBar"></div><span>硬</span></div>
+      <div class="legend" style="justify-content:space-between" id="legendNums"></div>
+      <h3 style="margin-top:16px">全部位 × 全状态（<span id="colName"></span>）</h3>
+      <table id="hzTable"></table>
+      <div class="state-note">状态 1–3 的名字是按攻略描述推测的<span class="unv guess">推测</span>。MHRice 只给阶段编号。</div>
+    </div>
+    <div style="display:grid;gap:18px;align-content:start">
+      <div class="panel detail" id="detail"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 ammo + calc -->
+<section id="ammo">
+  <div class="sec-h"><span class="no">§03</span><h2>用什么弹 · 计算器</h2><p>按「扣一次扳机」的期望伤害排序。部位和状态沿用 §02 的选择。</p></div>
+  <div class="calcgrid">
+    <div class="panel calc" id="calc"></div>
+    <div>
+      <div class="summary" id="summary"></div>
+      <div class="ctrls">
+        <label><input type="checkbox" id="onlyWeap" checked> 只看刻银讨铳能用的弹（速射按武器）</label>
+        <label>贯穿路径 <select id="path"></select></label>
+      </div>
+      <div class="panel" style="padding:6px 12px">
+        <table class="rank" id="rank"></table>
+      </div>
+      <div class="note-s" style="margin-top:8px">「打倒约需」= 任务体力 ÷ 每次射击伤害，只是理论值。不算装填、走位、多人体力倍率。贯穿弹最多 7 段；按路径估算时，7 段分到不同部位，各自用自己的肉质。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 phases -->
+<section id="phase">
+  <div class="sec-h"><span class="no">§04</span><h2>状态与阶段</h2><p>原初形态爵银龙会在四个状态间切换，每个状态的肉质和出手机会都不一样。</p></div>
+  <div class="flow"><b>原初</b> → 时间经过 → <b>血气觉醒</b> → 侵蚀加剧 / 掉血 → <b>血气烈昂</b> → 大爆炸后跌落，回到觉醒 · 低体力 → <b>血气蚀烈</b>（持续到结束）</div>
+  <div class="phases" id="phases"></div>
+  <div class="grid2" style="margin-top:18px">
+    <div class="panel" id="blight"></div>
+    <div class="panel">
+      <h3>异常耐性 <span class="muted" style="font:12px var(--sans)">第 1 / 2 / 3 次所需累积值</span></h3>
+      <div id="status"></div>
+      <div class="note-s" style="margin-top:8px" id="statusNote"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 builds -->
+<section id="builds">
+  <div class="sec-h"><span class="no">§05</span><h2>推荐配装</h2><p>雷、水肉质全身都是 0，雷贯 / 水贯轻弩对这只龙无效。</p></div>
+  <div class="builds" id="buildList"></div>
+</section>
+
+
+<!-- 06 videos -->
+<section id="videos">
+  <div class="sec-h"><span class="no">§06</span><h2>视频</h2><p>标红「先看」的 3 个加起来不到 20 分钟。点击在 YouTube 打开。</p></div>
+  <div id="videoList"></div>
+</section>
+
+<footer id="sources">
+  <div class="wrap grid2">
+    <div>
+      <h3 style="font:700 16px var(--serif);color:var(--paper)">未验证 / 推测</h3>
+      <ol id="unv"></ol>
+    </div>
+    <div>
+      <h3 style="font:700 16px var(--serif);color:var(--paper)">数据来源</h3>
+      <ol id="srcs"></ol>
+      <p>图标来自 MHRice / Kiranico 的游戏数据，版权归 CAPCOM 所有。本页只作个人攻略参考。</p>
+    </div>
+  </div>
+</footer>
+</main>
+
+<script src="data.js"></script>
+<script src="calc.js"></script>
+<script>
+(() => {
+const { MONSTER: M, PHASES, BLOODBLIGHT, AMMO, WEAPON, SKILLS, BUILDS, PIERCE_PATHS, UNVERIFIED, SOURCES, VIDEOS } = window.MHR;
+const C = window.MHRCalc;
+const $ = s => document.querySelector(s);
+const fmt = (x, d = 1) => (Math.round(x * 10 ** d) / 10 ** d).toLocaleString("zh-CN", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+const IMG = { n1:"normal",n2:"normal",n3:"normal",p1:"pierce",p2:"pierce",p3:"pierce",s1:"spread",s2:"spread",s3:"spread",
+  st2:"sticky",st3:"sticky",slice:"slicing",fire:"fire",pfire:"pfire",ice:"ice",pice:"pice",thunder:"thunder",dragon:"dragon",pdragon:"pdragon",wb:"wyvern" };
+const aImg = a => `assets/icons/ammo_${IMG[a.id]}.png`;
+const ICON = { fire:"fire", water:"water", thunder:"thunder", ice:"ice", dragon:"dragon" };
+const COLS = [
+  { k: "shot", n: "弹", img: "hit_shell" }, { k: "dragon", n: "龙", img: "dragon" }, { k: "fire", n: "火", img: "fire" },
+  { k: "ice", n: "冰", img: "ice" }, { k: "sever", n: "斩", img: "hit_slash" },
+];
+
+// ---------- state ----------
+const S = {
+  state: 0, part: "head", col: "shot", quest: "mr6", path: "auto", onlyWeap: true,
+  fAmmo: "p2", fRF: true,
+  o: { atk: 320, aff: 0, attack: 7, critEye: 7, wex: 2, critBoost: 3, normalUp: 0, pierceUp: 2, spreadUp: 0, rapidUp: 3,
+       dragonAtk: 0, fireAtk: 0, iceAtk: 0, critEle: 0, bloodlust: 0, extraAtk: 0, extraAff: 30, dist: 1, defMul: 1, critFire: false },
+};
+const quest = () => M.quests.find(q => q.id === S.quest);
+const questHP = () => Math.round(M.baseHP * quest().hpMul);
+const partObj = id => M.parts.find(p => p.id === id);
+const stName = i => M.states[i].name;
+
+// ---------- heat ----------
+const STOPS = [[0,"#2b2420"],[10,"#3d2b26"],[20,"#6a2a2b"],[30,"#9b2c30"],[40,"#c9463b"],[45,"#d9993a"],[60,"#f0cf7a"]];
+function heat(v, col) {
+  const scale = col === "shot" || col === "sever" ? 1 : 2; // 属性肉质数值小，放大 2 倍上色
+  v = Math.min(60, v * scale);
+  for (let i = 1; i < STOPS.length; i++) if (v <= STOPS[i][0]) {
+    const [a, ca] = STOPS[i - 1], [b, cb] = STOPS[i], t = (v - a) / (b - a || 1);
+    const h = c => [1, 3, 5].map(j => parseInt(c.slice(j, j + 2), 16));
+    const x = h(ca), y = h(cb);
+    return `rgb(${x.map((n, k) => Math.round(n + (y[k] - n) * t)).join(",")})`;
+  }
+  return STOPS.at(-1)[1];
+}
+
+// ---------- header ----------
+$("#monIcon").src = M.icon;
+$("#monName").innerHTML = `${M.name}<small>轻弩手册</small>`;
+$("#monAlt").textContent = M.nameAlt;
+$("#monType").innerHTML = `<img src="assets/icons/king_crown.png" style="width:16px;vertical-align:-3px"> ${M.type} · 基础体力 ${M.baseHP}`;
+$("#weak").innerHTML = "弱点 " + M.weakness.map(w =>
+  `<span><img src="assets/icons/${ICON[w.el]}.png" alt="${w.name}">${w.stars ? `<span class="stars">${"★".repeat(w.stars)}</span>` : `<span class="stars x">✕</span>`}</span>`).join("");
+$("#quest").innerHTML = M.quests.map(q => `<option value="${q.id}">${q.name}</option>`).join("");
+$("#quest").onchange = e => { S.quest = e.target.value; renderAll(); };
+
+// ---------- 肉质图（官方渲染图 + 部位圆点） ----------
+// 坐标为渲染图上的百分比位置
+const SPOTS = [
+  ["head", 47, 31], ["torso", 46, 56], ["foreleg", 55, 77], ["foreleg", 38, 84],
+  ["wing", 24, 30], ["wing", 80, 66], ["hindleg", 25, 81], ["tail", 15, 76], ["tailtip", 5, 62],
+];
+function drawDragon() {
+  const box = $("#dragon");
+  box.className = "mapimg st" + S.state;
+  box.querySelectorAll(".hs").forEach(n => n.remove());
+  for (const [id, x, y] of SPOTS) {
+    const p = partObj(id), v = p.hz[S.state][S.col];
+    const b = document.createElement("button");
+    b.className = "hs" + (id === S.part ? " sel" : "") + (S.col === "shot" && v >= 45 ? " weak" : "");
+    b.style.left = x + "%"; b.style.top = y + "%";
+    b.title = `${p.name}：${v}`;
+    b.innerHTML = `<span class="dot" style="background:${heat(v, S.col)}">${v}</span><span class="lb">${p.name}</span>`;
+    b.onclick = () => { S.part = id; renderAll(); };
+    box.appendChild(b);
+  }
+  $("#legendBar").style.background = `linear-gradient(90deg,${[60, 45, 40, 30, 20, 10, 0].map(v => STOPS.find(x => x[0] === v)[1]).join(",")})`;
+  const scale = S.col === "shot" || S.col === "sever" ? 1 : 2;
+  $("#legendNums").innerHTML = [60, 45, 30, 15, 0].map(v => `<span>${Math.round(v / scale)}</span>`).join("");
+}
+
+// ---------- controls ----------
+function segs() {
+  $("#stateSeg").innerHTML = M.states.map(st => `<button data-s="${st.id}" class="${st.id === S.state ? "on" : ""}">${st.id} · ${st.name}${st.guess ? "?" : ""}</button>`).join("");
+  $("#stateSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.state = +b.dataset.s; renderAll(); });
+  $("#colSeg").innerHTML = COLS.map(c => `<button data-c="${c.k}" class="${c.k === S.col ? "on" : ""}"><img src="assets/icons/${c.img}.png">${c.n}</button>`).join("");
+  $("#colSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.col = b.dataset.c; renderAll(); });
+}
+
+// ---------- ammo helpers ----------
+const weapRF = new Set(Object.entries(WEAPON.ammo).filter(([, v]) => v.rf).map(([k]) => k));
+function pathFor(a) {
+  if (!(a.kind === "pierce" || a.kind === "element-pierce")) return null;
+  if (S.path === "single") return null;
+  if (S.path === "auto") {
+    const best = PIERCE_PATHS.filter(p => p.hits && p.hits[S.part]).sort((a, b) => b.hits[S.part] - a.hits[S.part])[0];
+    return best ? best.hits : null;
+  }
+  return PIERCE_PATHS.find(p => p.id === S.path).hits;
+}
+function ranking() {
+  const list = S.onlyWeap ? AMMO.filter(a => WEAPON.ammo[a.id]) : AMMO;
+  return C.rankAmmo(list, S.part, S.state, S.o, { rfSet: S.onlyWeap ? weapRF : null, pathFor });
+}
+
+// ---------- detail ----------
+function renderDetail() {
+  const p = partObj(S.part), h = p.hz[S.state];
+  const top = ranking().slice(0, 3);
+  const maxT = top[0] ? top[0].total : 1;
+  $("#detail").innerHTML = `
+    <div class="kicker">${p.en} · 状态 ${S.state} ${stName(S.state)}</div>
+    <div class="big">${p.name}</div>
+    <div class="row">
+      <span><img src="assets/icons/hit_shell.png" style="width:16px;vertical-align:-3px"> 弹 <b>${h.shot}</b></span>
+      <span><img src="assets/icons/hit_slash.png" style="width:16px;vertical-align:-3px"> 斩 <b>${h.sever}</b></span>
+      <span><img src="assets/icons/dragon.png" style="width:16px;vertical-align:-3px"> 龙 <b>${h.dragon}</b></span>
+      <span><img src="assets/icons/fire.png" style="width:16px;vertical-align:-3px"> 火 <b>${h.fire}</b></span>
+      <span><img src="assets/icons/ice.png" style="width:16px;vertical-align:-3px"> 冰 <b>${h.ice}</b></span>
+      ${h.stun ? `<span><img src="assets/icons/stun.png" style="width:16px;vertical-align:-3px"> 眩晕 <b>${h.stun}</b></span>` : ""}
+    </div>
+    <div class="row">
+      <span>硬直值 <b>${p.stagger ?? "—"}</b></span><span>破坏值 <b>${p.brk ?? "—"}</b></span><span>${p.note}</span>
+      ${h.shot >= 45 ? `<span style="color:var(--gold2)">◆ 弱点（≥45）：弱点特效生效</span>` : ""}
+    </div>
+    <h3 style="margin-top:6px">这个部位最强的 3 种弹</h3>
+    <div class="top3">${top.map((r, i) => `
+      <div class="it"><span class="rk">${i + 1}</span><img class="ammoimg" src="${aImg(r.ammo)}">
+        <span>${r.ammo.name} ${r.isRF ? '<span class="rf">速射×' + r.bullets + "</span>" : ""}</span>
+        <span class="mono" style="color:var(--gold2)">${fmt(r.total)}</span></div>`).join("")}
+    </div>`;
+}
+
+function renderHzTable() {
+  const col = COLS.find(c => c.k === S.col);
+  $("#colName").textContent = col.n + " 肉质";
+  $("#hzTable").innerHTML = `<tr><th>部位</th>${M.states.map(s => `<th class="num" style="text-align:center">${s.id} ${s.short}</th>`).join("")}</tr>` +
+    M.parts.map(p => `<tr class="${p.id === S.part ? "selrow" : ""}"><td>${p.name}</td>${p.hz.map((h, i) =>
+      `<td class="hzcell${i === S.state && p.id === S.part ? " cur" : ""}" style="background:${heat(h[S.col], S.col)}">${h[S.col]}</td>`).join("")}</tr>`).join("");
+}
+
+// ---------- formula ----------
+function renderFormula() {
+  const a = AMMO.find(x => x.id === S.fAmmo);
+  const rf = S.fRF && !!a.rf;
+  $("#fRF").disabled = !a.rf; $("#fRF").checked = rf;
+  const h = C.hitDamage(a, S.part, S.state, S.o, rf);
+  $("#fPart").textContent = `${partObj(S.part).name} · ${S.state} ${stName(S.state)}`;
+  const st = (t, v, s, cls = "") => `<div class="step ${cls}"><div class="t">${t}</div><div class="v">${v}</div><div class="s">${s || "&nbsp;"}</div></div>`;
+  const op = x => `<div class="op">${x}</div>`;
+  const hzName = a.hz === "none" ? "无视肉质" : a.hz === "sever" ? "斩肉质" : "弹肉质";
+  const ammoMul = h.ammoSteps.map(s => `${s.label}×${s.x}`).join(" ") || "无";
+  $("#chainRaw").innerHTML =
+    st("真实攻击", h.raw, `面板 ${S.o.atk} + 技能`) + op("×") +
+    st("动作值", h.mv, rf ? "速射 ×0.7" : a.name) + op("×") +
+    st(hzName, h.hzVal, h.wexOn ? "≥45 弱点" : "") + op("×") +
+    st("弹/技能倍率", fmt(h.ammoMult, 3), ammoMul) + op("×") +
+    st("会心期望", fmt(h.crit, 3), `会心率 ${h.aff}%`) + op("=") +
+    st("物理 / 段", fmt(h.rawHit), "", "res");
+  if (h.eleSteps) {
+    const e = h.eleSteps;
+    $("#chainEle").innerHTML =
+      st("属性值", h.ele, `弹 ${e.base} + 属性技能`) + op("×") +
+      st(`${{ dragon: "龙", fire: "火", ice: "冰", thunder: "雷" }[a.ele]}肉质`, h.eleHz, "") + op("×") +
+      st("攻击加成", fmt(e.rawScale, 2), "1 + 真实攻击/100 ⚠") + op("×") +
+      st("速射/会心击", fmt(e.rf * e.ce, 3), "") + op("=") +
+      st("属性 / 段", fmt(h.eleHit), "", "res") + op("→") +
+      st("合计 / 段", fmt(h.total), "", "res");
+  } else $("#chainEle").innerHTML = "";
+  $("#fLine").innerHTML = `物理 = <em>真实攻击</em> × <em>动作值</em>/100 × <em>肉质</em>/100 × 弹药技能倍率 × 会心期望 × 防御倍率` +
+    (h.eleSteps ? `　|　属性 = <em>属性值</em> × <em>属性肉质</em>/100 × (1+真实攻击/100) × …<span class="unv">未验证</span>` : "");
+}
+
+// ---------- calculator ----------
+function renderCalc() {
+  const num = (k, label, step = 1) => `<div class="f"><label>${label}</label><input type="number" data-k="${k}" step="${step}" value="${S.o[k]}"></div>`;
+  const sel = (k) => `<div class="f"><label>${SKILLS[k].name}</label><select data-k="${k}">${Array.from({ length: SKILLS[k].max + 1 }, (_, i) => `<option ${i == S.o[k] ? "selected" : ""}>${i}</option>`).join("")}</select></div>`;
+  $("#calc").innerHTML = `
+    <h3>计算器</h3>
+    <div class="grp">武器</div>
+    ${num("atk", "攻击力")}${num("aff", "会心率 %")}
+    <div class="grp">攻击 / 会心</div>
+    ${sel("attack")}${sel("critEye")}${sel("wex")}${sel("critBoost")}${sel("bloodlust")}
+    ${num("extraAtk", "其他攻击 (固定值)")}${num("extraAff", "其他会心 % (如精神抖擞)")}
+    <div class="grp">弹药强化</div>
+    ${sel("normalUp")}${sel("pierceUp")}${sel("spreadUp")}${sel("rapidUp")}
+    <div class="grp">属性</div>
+    ${sel("dragonAtk")}${sel("fireAtk")}${sel("iceAtk")}${sel("critEle")}
+    <div class="grp">其他</div>
+    <div class="f"><label>会心射击（切换技）</label><input type="checkbox" data-k="critFire" ${S.o.critFire ? "checked" : ""}></div>
+    ${num("dist", "会心距离倍率", 0.05)}
+    <div class="note-s">1.0 = 在会心距离内。超出距离的衰减值未查到<span class="unv">未验证</span></div>
+    ${num("defMul", "怪物防御倍率", 0.05)}
+    <div class="presets">${BUILDS.map(b => `<button class="btn" data-b="${b.id}">套用：${b.short}</button>`).join("")}</div>`;
+  $("#calc").querySelectorAll("[data-k]").forEach(el => el.oninput = el.onchange = () => {
+    S.o[el.dataset.k] = el.type === "checkbox" ? el.checked : +el.value; renderAll(true);
+  });
+  $("#calc").querySelectorAll("[data-b]").forEach(el => el.onclick = () => applyBuild(el.dataset.b));
+}
+function applyBuild(id) {
+  const b = BUILDS.find(x => x.id === id);
+  const keep = { dist: S.o.dist, defMul: S.o.defMul };
+  Object.keys(S.o).forEach(k => { if (typeof S.o[k] === "number") S.o[k] = 0; });
+  S.o.critFire = false;
+  Object.assign(S.o, keep, b.preset);
+  if (id === "dragon") { S.fAmmo = "dragon"; S.part = "head"; }
+  if (id === "normal") { S.onlyWeap = false; $("#onlyWeap").checked = false; S.fAmmo = "n2"; }
+  if (id === "pierce") { S.fAmmo = "p2"; }
+  renderAll();
+  $("#ammo").scrollIntoView();
+}
+
+function renderRank() {
+  const r = ranking();
+  const max = Math.max(...r.map(x => x.total), 1);
+  const hp = questHP();
+  $("#rank").innerHTML = `<tr><th>#</th><th>弹药</th><th class="num">每段</th><th class="num">段 × 发</th><th class="num">每次射击</th><th class="num">装填</th><th class="num">打倒约需</th><th style="width:22%"></th></tr>` +
+    r.map((x, i) => {
+      const pierce = x.ammo.kind.includes("pierce"), p = pathFor(x.ammo);
+      const perHit = x.total / (x.hitsPerBullet * x.bullets);
+      return `<tr title="${x.ammo.note || ""}">
+        <td class="mono" style="color:var(--blood2)">${i + 1}</td>
+        <td><span class="nm"><img class="ammoimg" src="${aImg(x.ammo)}">${x.ammo.name} ${x.isRF ? `<span class="rf">速射</span>` : ""}</span>
+          ${x.ammo.note ? `<span class="note-s nt">${x.ammo.note}</span>` : ""}</td>
+        <td class="num">${fmt(perHit)}${p ? '<div class="note-s">路径平均</div>' : ""}</td>
+        <td class="num">${x.hitsPerBullet} × ${x.bullets}${pierce && !p ? '<div class="note-s">全中该部位</div>' : ""}</td>
+        <td class="num" style="color:var(--gold2);font-weight:600">${fmt(x.total)}</td>
+        <td class="num">${WEAPON.ammo[x.ammo.id] ? WEAPON.ammo[x.ammo.id].cap : "—"}</td>
+        <td class="num">${Math.ceil(hp / x.total).toLocaleString()} 次</td>
+        <td><div class="barwrap"><i style="width:${(x.total / max * 100).toFixed(1)}%"></i></div></td></tr>`;
+    }).join("");
+  const best = r[0];
+  const p = partObj(S.part);
+  $("#summary").innerHTML = `
+    <div><div class="t">当前目标</div><div class="v">${p.name} <span class="mono">弹 ${p.hz[S.state].shot}</span></div><div class="note-s">状态 ${S.state} · ${stName(S.state)}</div></div>
+    <div><div class="t">最佳弹药</div><div class="v">${best ? best.ammo.name : "—"} <span class="mono">${best ? fmt(best.total) : ""}</span></div><div class="note-s">每次射击期望伤害${best && best.ammo.ele ? '<span class="unv">属性公式未验证</span>' : ""}</div></div>
+    <div><div class="t">任务体力（${quest().name.split(" ")[0]}）</div><div class="v"><span class="mono">${hp.toLocaleString()}</span></div><div class="note-s">基础 ${M.baseHP} × ${quest().hpMul}</div></div>`;
+}
+
+// ---------- phases ----------
+function renderPhases() {
+  $("#phases").innerHTML = PHASES.map(ph => {
+    const st = M.states[ph.state];
+    return `<div class="phase" style="--c:${st.color}">
+      <div class="idx">状态 ${ph.state}${st.guess ? " · 肉质编号对应为推测" : ""}</div>
+      <h4>${ph.title}</h4>
+      <p>${ph.changes}</p>
+      <div class="lbl">要躲的招</div><ul>${ph.dodge.map(x => `<li>${x}</li>`).join("")}</ul>
+      <div class="lbl">输出窗口</div><ul class="win">${ph.windows.map(x => `<li>${x}</li>`).join("")}</ul>
+      <div class="rng">🎯 轻弩：${ph.ranged}</div>
+      <button class="btn" style="margin-top:10px" data-st="${ph.state}">在肉质图里看这个状态</button>
+    </div>`;
+  }).join("");
+  $("#phases").querySelectorAll("[data-st]").forEach(b => b.onclick = () => { S.state = +b.dataset.st; renderAll(); $("#map").scrollIntoView(); });
+  $("#blight").innerHTML = `<h3><img src="assets/icons/blood.png" style="width:20px;vertical-align:-4px"> ${BLOODBLIGHT.title}<span class="unv">数值未验证</span></h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--paper2)">${BLOODBLIGHT.points.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h3 style="margin-top:16px">道具与其他</h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--paper2)">
+      ${M.items.map(i => `<li>${i.ok ? "✔" : "✕"} ${i.name}：${i.note}</li>`).join("")}
+      ${M.misc.map(m => `<li>${m.k}：${m.v}${m.guess ? '<span class="unv guess">推测</span>' : ""}</li>`).join("")}
+    </ul>`;
+}
+function renderStatus() {
+  const q = quest();
+  const rows = M.status.map(s => {
+    const mul = q.statusMul[s.id] || 1;
+    const t = [s.init, Math.min(s.init + s.inc, s.max), Math.min(s.init + 2 * s.inc, s.max)].map(x => Math.round(x * mul));
+    const scale = t[2] * 1.04;
+    const bars = s.ok ? [3, 2, 1].map(n => `<i class="t${n}" style="width:${(t[n - 1] / scale * 100).toFixed(1)}%"></i>`).join("") +
+      t.map(v => `<span style="left:${(v / scale * 100).toFixed(1)}%">${v}</span>`).join("") : "";
+    return `<div class="status-row">
+      <span class="nm"><img src="assets/icons/${s.icon}.png">${s.name}</span>
+      <div class="track">${s.ok ? bars : '<span style="left:60px;transform:none;color:var(--paper3)">无效</span>'}</div>
+      <span class="muted">${s.ok ? `${s.init}(+${s.inc})→${s.max}${mul !== 1 ? ` ×${mul}` : ""} · ` : ""}${s.dur}</span></div>`;
+  }).join("");
+  $("#status").innerHTML = rows;
+  $("#statusNote").innerHTML = `${M.statusDecay}。任务倍率取自 MHRice 任务表（麻痹 / 睡眠 / 眩晕），列名对应未完全确认<span class="unv">未验证</span>。`;
+}
+
+// ---------- builds ----------
+function renderBuilds() {
+  $("#buildList").innerHTML = BUILDS.map(b => `<div class="build">
+    <h4>${b.title}${b.guess ? '<span class="unv guess">推测</span>' : ""}</h4>
+    <div class="w">${b.weapon}</div>
+    <div class="st">${b.stats}</div>
+    <div class="sk">${b.skills.map(s => `<span>${s}</span>`).join("")}</div>
+    <p>${b.why}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="note-s">来源：${SOURCES[b.src] ? `<a href="${SOURCES[b.src].url}">${SOURCES[b.src].name}</a>` : b.src}</span>
+      <button class="btn" data-b="${b.id}">套用到计算器</button></div>
+  </div>`).join("");
+  $("#buildList").querySelectorAll("[data-b]").forEach(el => el.onclick = () => applyBuild(el.dataset.b));
+}
+
+function renderVideos() {
+  $("#videoList").innerHTML = VIDEOS.map(g => `<div class="vgroup"><h3>${g.group}</h3><div class="vids">${g.items.map(v => `
+    <a class="vid" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">
+      <div class="th"><img src="assets/yt/${v.id}.jpg" alt="" loading="lazy">
+        ${v.star ? '<span class="star">先看</span>' : ""}<span class="len">${v.len}</span>${v.lang !== "—" ? `<span class="lang">${v.lang}</span>` : ""}</div>
+      <div class="bd"><div class="tt">${v.t}</div><div class="ch">${v.ch}</div><div class="why">→ ${v.why}</div></div>
+    </a>`).join("")}</div></div>`).join("");
+}
+
+function renderFooter() {
+  $("#unv").innerHTML = UNVERIFIED.map(x => `<li>${x}</li>`).join("");
+  $("#srcs").innerHTML = Object.values(SOURCES).map(s => `<li><a href="${s.url}">${s.name}</a></li>`).join("");
+}
+
+// ---------- init ----------
+$("#fAmmo").innerHTML = AMMO.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
+$("#fAmmo").value = S.fAmmo;
+$("#fAmmo").onchange = e => { S.fAmmo = e.target.value; S.fRF = true; renderFormula(); };
+$("#fRF").onchange = e => { S.fRF = e.target.checked; renderFormula(); };
+$("#path").innerHTML = `<option value="auto">自动：选经过该部位的路径</option>` + PIERCE_PATHS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+$("#path").value = S.path;
+$("#path").onchange = e => { S.path = e.target.value; renderAll(true); };
+$("#onlyWeap").onchange = e => { S.onlyWeap = e.target.checked; renderAll(true); };
+
+function renderAll(skipCalc) {
+  $("#hpLine").textContent = `体力 ≈ ${questHP().toLocaleString()}`;
+  segs(); drawDragon(); renderDetail(); renderHzTable(); renderFormula(); renderRank(); renderStatus();
+  if (!skipCalc) renderCalc();
+}
+// 支持 #s=1&p=foreleg&c=dragon 直接打开某个视图
+const hp = new URLSearchParams(location.hash.slice(1));
+if (hp.has("s")) S.state = Math.max(0, Math.min(3, +hp.get("s") || 0));
+if (hp.has("p") && partObj(hp.get("p"))) S.part = hp.get("p");
+if (hp.has("c") && COLS.some(c => c.k === hp.get("c"))) S.col = hp.get("c");
+renderPhases(); renderBuilds(); renderVideos(); renderFooter(); renderAll();
+})();
+</script>
+</body>
+</html>
