@@ -249,6 +249,108 @@
     ]},
   ];
 
+
+  // ---------------- v2：阶段页内容（ADHD 版：固定 4 块，每行短句） ----------------
+  // punish: "yes" = 之后能打 / "no" = 别贪 / "?" = 看情况（资料未写）
+  const STATE_PAGES = [
+    {
+      state: 0, title: "原初", img: "assets/img/states/normal.jpg",
+      imgCap: "原初状态：银白身体 + 紫色翼膜（Steam 官方截图）",
+      key: ["弱点是**头 (45)**", "交叉斩要**往它身前**闪", "被冲撞→**翔虫受身往侧边**"],
+      see: ["银白身体、**紫色翼膜**", "身上**没有红光**"],
+      dodge: ["**交叉斩**：向前闪，别往侧后", "**冲撞→尾刺**：吃冲撞后侧向受身", "**尾扫 / 尾刺**分不清 → 多滚一次"],
+      hit: ["招式结束后**打头**", "灭龙弹也打头（龙 25）"],
+      stand: ["正面**斜前 30–45°**", "别站正后方"],
+      moves: [
+        { n: "翼盾冲撞 → 尾刺", yi: true, tell: "翼像盾一样向前冲，范围宽", dodge: "被撞到就**翔虫受身往侧边**，追击的尾刺会落空", punish: "?", blood: false, src: "game8jp" },
+        { n: "翼刺 → 横扫", yi: true, tell: "单翼往前刺，接着横扫", dodge: "**侧闪**刺击；近就贴上去，远就拉开", punish: "yes", blood: false, src: "game8jp" },
+        { n: "尾扫", yi: true, tell: "起手和尾刺很像", dodge: "近 → 钻到身下；远 → 走开；**多滚一次**保险", punish: "?", blood: false, src: "game8jp" },
+        { n: "双翼交叉斩", yi: true, tell: "两翼交叉斩两次，左右后都很宽", dodge: "**向前（朝怪物）**闪；往侧面或后面会被打到", punish: "yes", blood: false, src: "game8jp" },
+      ],
+    },
+    {
+      state: 1, title: "血气觉醒", img: "assets/img/states/bloodening.jpg",
+      imgCap: "血气觉醒：胸口与两只前肢附着红色啮生虫（YouTube 截图）",
+      key: ["改打**前肢 (45)**", "尾巴攻击附带**噬血**", "打够伤害 → **大倒地**，回到原初"],
+      see: ["**胸口、前肢、尾巴**发红光", "周围飘**红色粒子**"],
+      dodge: ["新增**远程**：火球、吐息、风刃", "**尾一闪**：最强尾击 + 噬血 20 秒", "吐息留下**龙卷**，别站里面"],
+      hit: ["打**发光的前肢**", "尾巴尖也变软（40）", "累积伤害 → 强制倒地"],
+      stand: ["站**侧面**", "贯穿弹**穿过两只前肢**"],
+      moves: [
+        { n: "超火球", yi: true, tell: "龙属性大火球", dodge: "横向翻滚；要挡需要**强化防御**", punish: "?", blood: false, src: "mhrice" },
+        { n: "蓄力吐息", yi: true, tell: "蓄力后吐出，留下持续区域和龙卷", dodge: "离开区域，**别站龙卷里**", punish: "?", blood: false, src: "mhrice" },
+        { n: "火焰放射 / 乱舞放射", yi: true, tell: "龙属性光束扫射", dodge: "往光束扫来方向的**外侧**走", punish: "?", blood: false, src: "mhrice" },
+        { n: "血镰", yi: true, tell: "血红色镰刃", dodge: "侧闪（龙属性异常 20 秒）", punish: "?", blood: false, src: "mhrice" },
+        { n: "啮生虫风刃", yi: true, tell: "飞出风刃", dodge: "侧闪", punish: "?", blood: true, src: "mhrice" },
+        { n: "尾一闪", yi: true, tell: "最强单发尾击（110 伤害）", dodge: "**远离尾巴**", punish: "?", blood: true, src: "mhrice" },
+      ],
+    },
+    {
+      state: 2, title: "血气烈昂", img: "assets/img/states/bloodrage.jpg",
+      imgCap: "烈昂大招：升空后地面落下啮生虫陨石（YouTube 截图）", imgGuess: true,
+      key: ["大招最后**紧急回避**", "爆炸后**跌落倒地** = 最大输出窗口", "全身变软 → **贯穿弹**最赚"],
+      see: ["会**瞬移**", "红光更强，招式更凶"],
+      dodge: ["**大招**：升空 → 陨石 + 地面冲击 → 瞬移头顶 → **大爆炸**", "陨石阶段**一直跑**", "最后爆炸**紧急回避**（不可防）"],
+      hit: ["爆炸后它会**跌落**", "全身肉质变软", "速射**前肢**或贯穿全身"],
+      stand: ["大招时离开地面能量", "跌落后马上**贴近到会心距离**"],
+      moves: [
+        { n: "大招：陨石 → 大爆炸", yi: true, tell: "飞上天，地面落下啮生虫陨石和冲击波，然后瞬移到头顶", dodge: "陨石阶段**一直跑动**；最后爆炸**紧急回避**（150 伤害，不可防御）", punish: "yes", blood: true, src: "mhrice" },
+        { n: "追踪啮生虫", yi: true, guess: true, tell: "啮生虫会追着人飞", dodge: "横向跑动拉开", punish: "?", blood: true, src: "mhrice" },
+        { n: "范围吸血", yi: true, guess: true, tell: "地面冲击波向外扩散", dodge: "离开范围；要挡需**强化防御**", punish: "?", blood: true, src: "mhrice" },
+        { n: "多重激光", yi: true, guess: true, tell: "三道光束", dodge: "**站光束之间**，不可防御", punish: "?", blood: true, src: "mhrice" },
+      ],
+    },
+    {
+      state: 3, title: "血气蚀烈", img: "assets/img/states/bloodlust.jpg",
+      imgCap: "血气蚀烈：翼与全身发出橙红光（monsterhunterwiki 截图）",
+      key: ["连招不停，**别贪**", "新星爆发后**痛苦挣扎** = 输出窗口", "**闪光弹无效**"],
+      see: ["体力很低时进入，**不会再退出**", "**翼发出橙红光**"],
+      dodge: ["**起跳 → 双翼砸地**：地上出现能量圈", "→ 去**没有能量**的位置", "连招结尾：地面 / 空中**新星爆发**"],
+      hit: ["新星后它会**痛苦挣扎**", "这时打**前肢或头**"],
+      stand: ["保持**中距离**", "连招中只躲不打"],
+      moves: [
+        { n: "起跳 → 双翼砸地", yi: true, tell: "起跳时地上出现圆形能量场", dodge: "移到**没有能量**的地方；进了圈就回避砸地", punish: "?", blood: true, src: "game8jp" },
+        { n: "新星爆发", yi: true, tell: "长连招的结尾，地面或空中爆发", dodge: "提前拉开距离", punish: "yes", blood: true, src: "mhwiki" },
+        { n: "血之火焰", yi: true, tell: "向外三波火焰，身后也会被打到", dodge: "往远处跑，别站身后", punish: "?", blood: false, src: "fextra" },
+      ],
+    },
+  ];
+
+  const FOLLOWERS = {
+    quest: { name: "灭净制裁", en: "Harbinger of Destruction", rank: "MR6★ 紧急任务（MR10 解锁）", giver: "提督加雷亚斯", fixed: "菲奥莱娜（Fiorayne）· 片手剑", src: "https://mhrise.mhrice.info/quest/405602.html" },
+    pick: [
+      { n: "Hinoa", ja: "ヒノエ", w: "狩猎笛", role: "回复 · 攻防强化 · 生命粉尘", why: "噬血会让回复变差，有人帮你奶最省心", tier: "S" },
+      { n: "Utsushi", ja: "ウツシ教官", w: "狩猎笛", role: "攻击 / 属性攻击强化 · 属性异常无效", why: "game8 评价和弩很搭；灭龙弹吃属性强化", tier: "S" },
+    ],
+    alt: [
+      { n: "Minoto", ja: "ミノト", w: "狩猎笛", role: "守护 · 耐力 · 音障", tier: "A" },
+      { n: "Luchika", ja: "ルーチカ", w: "重弩", role: "黏着弹 / 状态弹，不回复", tier: "A" },
+    ],
+    avoid: [
+      { n: "Rondine", why: "她的陷阱对这只龙无效（落穴、麻痹陷阱、音爆都没用）" },
+      { n: "3 个狩猎笛", why: "game8：三笛一起配合不好" },
+    ],
+    note: "游戏内中文名只确认了菲奥莱娜、提督加雷亚斯；其他用日文 / 英文名。",
+    tierSrc: "https://game8.jp/mhrise/454177",
+  };
+
+  // 侧边栏结构 + 线性顺序（上一页 / 下一页）
+  const PAGES = [
+    { id: "home", t: "速读", icon: "⚡" },
+    { group: "打法", items: [
+      { id: "map", t: "打哪里" },
+      { id: "ammo", t: "用什么弹" },
+      { id: "phase", t: "阶段与招式", children: [0, 1, 2, 3] },
+    ]},
+    { group: "原理", items: [{ id: "formula", t: "伤害怎么算" }] },
+    { group: "准备", items: [
+      { id: "builds", t: "推荐配装" },
+      { id: "followers", t: "盟友" },
+      { id: "status", t: "异常与道具" },
+    ]},
+    { id: "videos", t: "视频", icon: "▶" },
+  ];
+
   const UNVERIFIED = [
     "肉质阶段 1–3 分别对应哪个状态：MHRice 只给编号，本页按攻略描述推测（觉醒 / 烈昂 / 蚀烈）。",
     "属性弹公式中的 ×(1 + 真实攻击/100) 项：取自 MHR-Damage 源码，没有找到第二个来源。",
@@ -258,9 +360,12 @@
     "异常弹每发的累积值：数据不一致，本页不计算需要几发。",
     "噬血状态的流血速度、吸血比例：没有找到数值。",
     "推荐配装中标「推测」的两套：按公式推演，不是攻略站给出的配装。",
+    "招式的中文名大多是按日文数据名意译（标「译」），不是游戏内官方译名。",
+    "烈昂阶段的招式归属：MHRice 只标了【強】，按攻略描述推测属于烈昂。",
+    "盟友推荐（Hinoa + Utsushi）：依据 game8 的通用盟友评级推导，没有找到针对这只龙的共识。",
   ];
 
-  const DATA = { SOURCES, MONSTER, PHASES, BLOODBLIGHT, AMMO, AMMO_SRC, WEAPON, SKILLS, SWITCH, BUILDS, PIERCE_PATHS, UNVERIFIED, VIDEOS };
+  const DATA = { SOURCES, MONSTER, PHASES, BLOODBLIGHT, AMMO, AMMO_SRC, WEAPON, SKILLS, SWITCH, BUILDS, PIERCE_PATHS, UNVERIFIED, VIDEOS, STATE_PAGES, FOLLOWERS, PAGES };
   if (typeof module !== "undefined" && module.exports) module.exports = DATA;
   else root.MHR = DATA;
 })(typeof window !== "undefined" ? window : globalThis);
