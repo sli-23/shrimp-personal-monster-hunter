@@ -70,9 +70,10 @@ PAGES.forEach(p => {
 });
 ORDER.push({ r: "sources", t: "来源与未验证" });
 
-function parseHash() {
+function parseHash(applyParams = false) {
   const h = location.hash.replace(/^#\/?/, "");
   const [path, qs] = h.split("?");
+  if (!applyParams) return path || "";
   const q = new URLSearchParams(qs || "");
   if (q.has("s")) S.state = Math.max(0, Math.min(3, +q.get("s") || 0));
   if (q.has("p") && partObj(q.get("p"))) S.part = q.get("p");
@@ -93,27 +94,28 @@ function renderChrome(route) {
   const grpOf = r => { const base = r.split("/")[0]; return PAGES.find(p => p.group && p.items.some(i => i.id === base))?.group || PAGES.find(p => p.id === base)?.t; };
   $("#topnav").innerHTML = top.map(([t, r]) => `<a href="#/${r}" class="${grpOf(route) === t ? "on" : ""}">${t}</a>`).join("");
   const link = (r, t, extra = "") => `<a class="it ${route === r ? "on" : ""}" href="#/${r}">${extra}${t}</a>`;
-  let h = `<h4>目录</h4>`;
+  let h = `<div class="brandm">${M.name}</div>`;
   for (const p of PAGES) {
-    if (!p.group) { h += link(p.id === "home" ? "" : p.id, p.t, `<span style="width:14px;text-align:center">${p.icon || ""}</span>`); continue; }
+    if (!p.group) { h += link(p.id === "home" ? "" : p.id, p.t); continue; }
     const n = p.items.reduce((s, i) => s + (i.children ? i.children.length : 1), 0);
-    h += `<div class="grp ${closed.has(p.group) ? "closed" : ""}" data-g="${p.group}"><span class="chev">▾</span>${p.group}<span class="cnt">${n}</span></div><div class="sub">`;
+    h += `<div class="gl ${closed.has(p.group) ? "closed" : ""}" data-g="${p.group}" role="button" tabindex="0"><span class="chev">▾</span>${p.group}<span class="cnt">${n}</span></div><div class="sub">`;
     for (const it of p.items) {
       if (!it.children) { h += link(it.id, it.t); continue; }
-      const open = route.startsWith(it.id + "/");
-      h += `<a class="it ${open ? "on" : ""}" href="#/${it.id}/${open ? route.split("/")[1] : 0}">${it.t}</a><div class="sub">` +
+      const cur = route.startsWith(it.id + "/") ? route.split("/")[1] : 0;
+      h += `<a class="it" href="#/${it.id}/${cur}">${it.t}</a><div class="tree">` +
         it.children.map(n => link(`${it.id}/${n}`, M.states[n].name, `<span class="dotc" style="background:${M.states[n].color}"></span>`)).join("") + `</div>`;
     }
     h += `</div>`;
   }
   h += `<div class="foot">
     <div class="legend2"><span><i style="background:var(--blood2)"></i>红 = 要躲 / 危险</span><span><i style="background:var(--gold)"></i>金 = 能打 / 弱点</span><span><i style="background:var(--paper3)"></i>灰 = 背景信息</span></div>
-    ${link("sources", "来源与未验证", "ⓘ ")}
-    <div class="legend2">快捷键 <span><span class="kbd">[</span> 上一页　<span class="kbd">]</span> 下一页</span></div></div>`;
+    ${link("sources", "来源与未验证")}
+    <div class="legend2"><span><span class="kbd">[</span> 上一页　<span class="kbd">]</span> 下一页</span></div></div>`;
   $("#side").innerHTML = h;
-  $("#side").querySelectorAll(".grp").forEach(g => g.onclick = () => {
-    const k = g.dataset.g; closed.has(k) ? closed.delete(k) : closed.add(k);
-    localStorage.setItem("mhr_closed", JSON.stringify([...closed])); g.classList.toggle("closed");
+  $("#side").querySelectorAll(".gl").forEach(g => {
+    const t = () => { const k = g.dataset.g; closed.has(k) ? closed.delete(k) : closed.add(k);
+      localStorage.setItem("mhr_closed", JSON.stringify([...closed])); g.classList.toggle("closed"); };
+    g.onclick = t; g.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); t(); } };
   });
 }
 
@@ -143,16 +145,16 @@ PAGE[""] = () => {
     `最大输出窗口：**烈昂大爆炸后的跌落**`,
   ]) + `
   <div class="tiles">
-    <div class="tile"><div class="t">弱点部位</div><div class="v">${w0.join("、")} → ${w1.join("、")}</div><div class="s">原初 → 侵蚀后（弹肉质 ≥45）</div></div>
-    <div class="tile"><div class="t">最佳弹药（打${w0[0]}）</div><div class="v">${best.ammo.name}</div><div class="s"><span class="mono" style="color:var(--gold2)">${fmt(best.total)}</span> / 每次射击（按计算器设置）</div></div>
-    <div class="tile"><div class="t">任务体力</div><div class="v"><span class="mono">${questHP().toLocaleString()}</span></div><div class="s">${quest().name}</div></div>
-    <div class="tile"><div class="t">弱点属性</div><div class="v" style="display:flex;gap:10px;align-items:center">${M.weakness.filter(w => w.stars).map(w => `<span><img src="assets/icons/${ICON[w.el]}.png" style="width:22px;vertical-align:-4px"><span class="stars">${"★".repeat(w.stars)}</span></span>`).join("")}</div><div class="s">雷 / 水 无效</div></div>
+    <a class="tile" href="#/map?s=1&p=foreleg"><span class="go">→</span><div class="t">弱点部位</div><div class="v">${w0.join("、")} → ${w1.join("、")}</div><div class="s">原初 → 侵蚀后（弹肉质 ≥45）· 看肉质图</div></a>
+    <a class="tile" href="#/ammo"><span class="go">→</span><div class="t">最佳弹药（打${w0[0]}）</div><div class="v">${best.ammo.name}</div><div class="s"><span class="mono" style="color:var(--gold2)">${fmt(best.total)}</span> / 每次射击 · 看全部弹药</div></a>
+    <a class="tile" href="#" data-act="quest"><span class="go">→</span><div class="t">任务体力</div><div class="v"><span class="mono">${questHP().toLocaleString()}</span></div><div class="s">${quest().name} · 点击切换任务</div></a>
+    <a class="tile" href="#/map?c=dragon"><span class="go">→</span><div class="t">弱点属性</div><div class="v" style="display:flex;gap:10px;align-items:center">${M.weakness.filter(w => w.stars).map(w => `<span><img src="assets/icons/${ICON[w.el]}.png" style="width:22px;vertical-align:-4px"><span class="stars">${"★".repeat(w.stars)}</span></span>`).join("")}</div><div class="s">雷 / 水 无效 · 看龙肉质</div></a>
   </div>
   <h2 class="h">开打前 3 件事</h2>
   <ul class="check">
-    <li><span class="n">1</span><span>带 <b>刻银讨铳</b>（或高攻击的速射贯穿轻弩），配装见 <a href="#/builds">推荐配装</a></span></li>
-    <li><span class="n">2</span><span>多带 <b>回复药</b>：「噬血」状态会降低回复效果；<b>闪光弹</b>在蚀烈前有用</span></li>
-    <li><span class="n">3</span><span>先看 1 分钟 <a href="#/videos">官方预告</a>，认清 4 个状态长什么样</span></li>
+    <li><a class="row" href="#/builds"><span class="n">1</span><span>带 <b>刻银讨铳</b>（或高攻击的速射贯穿轻弩）</span><span class="go">推荐配装 →</span></a></li>
+    <li><a class="row" href="#/status"><span class="n">2</span><span>多带 <b>回复药</b>（噬血会降低回复）；<b>闪光弹</b>在蚀烈前有用</span><span class="go">异常与道具 →</span></a></li>
+    <li><a class="row" href="#/videos"><span class="n">3</span><span>先看 1 分钟 <b>官方预告</b>，认清 4 个状态长什么样</span><span class="go">视频 →</span></a></li>
   </ul>
   <h2 class="h">内容</h2>
   <div class="secs">${secs.map(([r, t, s]) => `<a href="#/${r}"><div class="t">${t}</div><div class="s">${s}</div></a>`).join("")}</div>`;
@@ -265,7 +267,7 @@ function renderCalc() {
   const sel = k => `<div class="f"><label>${SKILLS[k].name}</label><select data-k="${k}">${Array.from({ length: SKILLS[k].max + 1 }, (_, i) => `<option ${i == S.o[k] ? "selected" : ""}>${i}</option>`).join("")}</select></div>`;
   const grp = (t, open, inner) => `<details ${open ? "open" : ""}><summary>${t}</summary>${inner}</details>`;
   $("#calc").innerHTML = `<h3>计算器</h3>
-    <div class="presets" style="margin:0 0 6px">${BUILDS.map(b => `<button class="btn" data-b="${b.id}">套用：${b.short}</button>`).join("")}</div>
+    <div class="presets" style="margin:0 0 6px">${BUILDS.map(b => { const on = isApplied(b); return `<button class="btn${on ? " on" : ""}" data-b="${b.id}" aria-pressed="${on}">${on ? "✓ 已套用：" : "套用："}${b.short}</button>`; }).join("")}</div>
     ${grp("武器", true, num("atk", "攻击力") + num("aff", "会心率 %"))}
     ${grp("攻击 / 会心", true, sel("attack") + sel("critEye") + sel("wex") + sel("critBoost") + sel("bloodlust") + num("extraAtk", "其他攻击 (固定值)") + num("extraAff", "其他会心 %"))}
     ${grp("弹药强化", false, sel("normalUp") + sel("pierceUp") + sel("spreadUp") + sel("rapidUp"))}
@@ -273,9 +275,12 @@ function renderCalc() {
     ${grp("其他", false, `<div class="f"><label>会心射击（切换技）</label><input type="checkbox" data-k="critFire" ${S.o.critFire ? "checked" : ""}></div>` +
       num("dist", "会心距离倍率", 0.05) + `<div class="note-s">1.0 = 在会心距离内<span class="unv">未验证</span></div>` + num("defMul", "怪物防御倍率", 0.05))}`;
   $("#calc").querySelectorAll("[data-k]").forEach(el => el.oninput = el.onchange = () => {
-    S.o[el.dataset.k] = el.type === "checkbox" ? el.checked : +el.value; renderRank();
+    S.o[el.dataset.k] = el.type === "checkbox" ? el.checked : +el.value; renderRank(); refreshPresets();
   });
   $("#calc").querySelectorAll("[data-b]").forEach(el => el.onclick = () => applyBuild(el.dataset.b));
+}
+function isApplied(b) {   // 当前计算器数值是否正好等于这套配装
+  return Object.keys(S.o).every(k => k === "dist" || k === "defMul" ? true : (b.preset[k] ?? (typeof S.o[k] === "number" ? 0 : false)) === S.o[k]);
 }
 function applyBuild(id) {
   const b = BUILDS.find(x => x.id === id);
@@ -287,6 +292,10 @@ function applyBuild(id) {
   if (id === "normal") { S.onlyWeap = false; S.fAmmo = "n2"; }
   if (id === "pierce") { S.fAmmo = "p2"; S.onlyWeap = true; }
   location.hash === "#/ammo" ? render(true) : go("ammo");
+}
+function refreshPresets() {
+  document.querySelectorAll("#calc [data-b]").forEach(el => { const b = BUILDS.find(x => x.id === el.dataset.b), on = isApplied(b);
+    el.classList.toggle("on", on); el.setAttribute("aria-pressed", on); el.textContent = (on ? "✓ 已套用：" : "套用：") + b.short; });
 }
 function renderRank() {
   const r = ranking(), max = Math.max(...r.map(x => x.total), 1), hp = questHP(), p = partObj(S.part), best = r[0];
@@ -410,7 +419,7 @@ PAGE.followers = () => {
   <h2 class="h">也可以</h2>
   <div class="fol">${F.alt.map(f => card(f, "a")).join("")}</div>
   <h2 class="h">别带</h2>
-  <ul class="check">${F.avoid.map(a => `<li><span class="n" style="color:var(--blood2)">✕</span><span><b>${a.n}</b>：${a.why}</span></li>`).join("")}</ul>
+  <ul class="check">${F.avoid.map(a => `<li class="static"><span class="n" style="color:var(--blood2)">✕</span><span><b>${a.n}</b>：${a.why}</span></li>`).join("")}</ul>
   <p class="note-s" style="margin-top:12px">评级来自 <a href="${F.tierSrc}" target="_blank">game8 盟友评级</a>（通用，不是针对这只龙）。${F.note}</p>`;
 };
 
@@ -456,8 +465,9 @@ PAGE.sources = () => header("Info", "来源与未验证", "图标、截图来自
   </div>`;
 
 // ================= 渲染 =================
-function render(scrollTop = true) {
-  const route = parseHash();
+// fromHash=true：只有网址变化时才用网址参数覆盖状态；页面内点击不会被旧参数还原
+function render(scrollTop = true, fromHash = false) {
+  const route = parseHash(fromHash);
   let html, bind;
   const [base, arg] = route.split("/");
   if (base === "phase") { const n = Math.max(0, Math.min(3, +arg || 0)); html = PAGE.phase(n); }
@@ -466,6 +476,7 @@ function render(scrollTop = true) {
   const r = base === "phase" ? `phase/${Math.max(0, Math.min(3, +arg || 0))}` : (PAGE[base] ? base : "");
   $("#main").innerHTML = html + pager(r);
   bind && bind();
+  document.querySelectorAll('[data-act="quest"]').forEach(a => a.onclick = e => { e.preventDefault(); const q = $("#quest"); q.focus(); try { q.showPicker(); } catch (_) {} });
   renderChrome(r);
   if (r === "map") syncHash("map");
   $("#hpLine").textContent = `体力 ${questHP().toLocaleString()}`;
@@ -475,7 +486,7 @@ function render(scrollTop = true) {
 $("#quest").innerHTML = M.quests.map(q => `<option value="${q.id}">${q.name}</option>`).join("");
 $("#quest").value = S.quest;
 $("#quest").onchange = e => { S.quest = e.target.value; render(false); };
-window.addEventListener("hashchange", () => render(true));
+window.addEventListener("hashchange", () => render(true, true));
 document.addEventListener("keydown", e => {
   if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
   if (e.key !== "[" && e.key !== "]") return;
@@ -484,5 +495,5 @@ document.addEventListener("keydown", e => {
   const t = ORDER[i + (e.key === "]" ? 1 : -1)];
   if (t) go(t.r);
 });
-render();
+render(true, true);
 })();
