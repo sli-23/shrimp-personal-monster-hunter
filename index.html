@@ -371,7 +371,9 @@ table.hzt td.hzcell.cur{outline:2px solid var(--gold2);outline-offset:-2px;opaci
 .eq.arm{grid-template-columns:170px 1fr}
 .eqv{position:relative;display:flex;gap:4px;align-items:center;justify-content:center;background:radial-gradient(70% 70% at 50% 50%,rgba(212,165,74,.08),transparent 70%);border-radius:3px;min-height:130px}
 .eqv .rend{max-width:100%;max-height:200px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6))}
-.eq.arm .eqv .rend{max-width:50%}
+.eq.arm .eqv .rend{max-width:50%;max-height:240px}
+.eq.arm .eqv .rend:only-child{max-width:100%}
+.eqv .rend{min-height:60px}
 .eqv > .eqi{position:absolute;left:4px;top:4px;width:30px;height:30px}
 .noimg{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--paper3);font-size:11px}
 .noimg .eqi{width:64px;height:64px}
@@ -449,6 +451,19 @@ table.recent td a{color:var(--paper);font-weight:600}
   main#main{padding:20px}
 }
 
+/* ---------- 任务选择 ---------- */
+.qbtn{display:inline-flex;align-items:center;gap:10px;background:var(--ink2);border:1px solid var(--line2);color:var(--paper);border-radius:3px;padding:6px 10px;font:500 13px var(--sans);cursor:pointer;max-width:420px}
+.qbtn:hover,.qbtn[aria-expanded="true"]{border-color:var(--gold)}
+.qbtn .ql{font:600 10.5px var(--mono);letter-spacing:.12em;color:var(--paper3)}
+.qbtn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qbtn .hp{font:600 12.5px var(--mono);color:var(--gold2);white-space:nowrap}
+.qbtn svg,.qmenu svg{flex:none;color:var(--paper3)}
+.qmenu{min-width:340px}
+.qmenu a .qn{display:flex;align-items:center;gap:8px;font:600 14px var(--sans)}
+.qmenu a .qs{display:block;font:12px var(--mono);color:var(--paper3);margin-top:2px}
+.qtag{font:700 10.5px var(--sans);padding:1px 6px;border-radius:2px;color:#ffb3b8;border:1px solid rgba(224,65,75,.55);background:rgba(179,32,42,.18)}
+.qtag.ev{color:var(--paper2);border-color:var(--line2);background:var(--ink3)}
+.side .mq .qbtn{width:100%;justify-content:space-between}
 /* ---------- 怪物切换菜单 ---------- */
 .top nav button.mon{display:inline-flex;align-items:center;gap:7px;background:var(--ink3);border:1px solid var(--line);color:var(--gold2);font:600 14px var(--sans);padding:6px 10px;border-radius:3px;cursor:pointer}
 .top nav button.mon:hover,.top nav button.mon[aria-expanded="true"]{border-color:var(--gold)}
@@ -551,7 +566,7 @@ table.recent td a{color:var(--paper);font-weight:600}
   <nav id="topnav"></nav>
   <div class="right">
     <div class="search"><input id="search" type="search" placeholder="搜索怪物（中 / 日 / 英）" autocomplete="off"><span class="kbd">/</span><div id="searchRes" hidden></div></div>
-    <span id="questWrap">任务 <select id="quest"></select> <span class="hp" id="hpLine"></span></span>
+    <span id="questWrap"><button class="qbtn" id="questBtn" aria-haspopup="menu" aria-expanded="false"></button></span>
   </div>
 </header>
 <div class="shell">
@@ -560,6 +575,7 @@ table.recent td a{color:var(--paper);font-weight:600}
 </div>
 <div class="scrim" id="scrim"></div>
 <div class="monmenu" id="monMenu" hidden></div>
+<div class="monmenu qmenu" id="questMenu" hidden></div>
 <nav class="bnav" id="bnav"></nav>
 <script src="data/shared.js"></script>
 <script src="data/monsters/index.js"></script>

@@ -3,7 +3,7 @@
 2) 渲染图：monsterhunterwiki 上有的就下载 → assets/equip/render/<文件名>.png（没有的就不显示）
 用法: python3 -I tools/equip_assets.py em132_05 em132_00 em072_08 em072_00
 """
-import json, os, re, subprocess, sys, time, urllib.parse
+import json, os, re, subprocess, sys, time, unicodedata, urllib.parse
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,6 +43,46 @@ def wiki_lookup(titles):
             if "imageinfo" in p: found[p["title"].replace("File:", "").replace(" ", "_")] = p["imageinfo"][0]["url"]   # wiki 把 _ 变成空格
     return found
 
+def save_render(raw, name, key_black=False):
+    out = os.path.join(ROOT, "assets", "equip", "render", name)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    im = Image.open(raw).convert("RGBA")
+    if key_black:   # 纯黑背景 → 透明（边缘按亮度渐变）
+        px = im.load()
+        for y in range(im.height):
+            for x in range(im.width):
+                r, g, b_, a = px[x, y]; m = max(r, g, b_)
+                if m < 28: px[x, y] = (r, g, b_, 0)
+                elif m < 60: px[x, y] = (r, g, b_, int(255 * (m - 28) / 32))
+        bb = im.getbbox(); im = im.crop(bb) if bb else im
+    bb = im.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()   # 去掉透明留白
+    if bb: im = im.crop(bb)
+    im.thumbnail((640, 640)); im.save(out, optimize=True)
+    return "assets/equip/render/" + name
+
+def fetch_override(en, o):
+    raw = os.path.join(DL, "ov_" + re.sub(r"\W+", "_", en) + ".img")
+    if not os.path.exists(raw): curl(o["url"], raw)
+    return save_render(raw, "ov_" + re.sub(r"\W+", "_", en) + ".png", o.get("keyBlack"))
+
+def fextra(en):
+    """Fextralife 武器页里的武器小图（文件名 = 名字小写 + -mhr-wiki-guide）。"""
+    page = os.path.join(DL, "fx_" + re.sub(r"\W+", "_", en) + ".html")
+    if not os.path.exists(page):
+        curl("https://monsterhunterrise.wiki.fextralife.com/" + urllib.parse.quote(en.replace(" ", "+"), safe="+'"), page)
+    s = open(page, encoding="utf-8", errors="ignore").read()
+    plain = lambda t: unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()   # é → e
+    slug = re.sub(r"[^a-z0-9]", "", plain(en).lower())
+    for u in re.findall(r'src="(https://static0\.fextralifeimages\.com/file/monsterhunterrise/[^"]+?\.png)"', s):
+        fn = u.rsplit("/", 1)[1].lower()
+        if "ammo" in fn or fn.startswith("rare-") or "wiki-guide" not in fn: continue
+        base = re.sub(r"[^a-z0-9]", "", plain(urllib.parse.unquote(fn)).split("mhr")[0].split("monster")[0])
+        if base == slug or (slug.endswith("set") and base == slug[:-3] + "armorset"):   # 防具图有时叫 <系列>_armor_set
+            raw = os.path.join(DL, "fxi_" + fn)
+            if not os.path.exists(raw): curl(u, raw)
+            return save_render(raw, "fx_" + re.sub(r"\W+", "_", en) + ".png")
+    return None
+
 def fname(en): return "MHRS-" + re.sub(r"\s+", "_", en.strip())
 
 def main():
@@ -69,10 +109,21 @@ def main():
                 raw = os.path.join(DL, t); curl(url, raw)
                 im = Image.open(raw).convert("RGBA"); im.thumbnail((640, 640)); im.save(out, optimize=True)
             renders.setdefault(href, {})[kind] = "assets/equip/render/" + os.path.basename(out)
+        # 补图：手动指定 > wiki > Fextralife（几乎每把武器都有一张小图，背景透明）
+        ov = {k: v for k, v in json.load(open(os.path.join(ROOT, "tools", "render_overrides.json"))).items() if not k.startswith("_")}
+        for w in b["weapons"]:
+            en = w["names"]["en"]
+            if en in ov:
+                renders.setdefault(w["href"], {})["w"] = fetch_override(en, ov[en])
+            elif not (renders.get(w["href"]) or {}).get("w"):
+                r = fextra(en)
+                if r: renders.setdefault(w["href"], {})["w"] = r
         for w in b["weapons"]: w["render"] = (renders.get(w["href"]) or {}).get("w")
         for a in b["armor"]:
             r = renders.get(a["href"]) or {}
             a["render"] = {"m": r.get("aM"), "f": r.get("aF")}
+            if not (a["render"]["m"] or a["render"]["f"]):   # Fextralife「<系列> Set」页的整套图
+                a["render"]["m"] = fextra(a["series"]["en"] + " Set")
         js = f"/* 由 tools/fetch_equipment.py + tools/equip_assets.py 生成 */\nMHR.equip = MHR.equip || {{}};\nMHR.equip[{json.dumps(eid)}] = {json.dumps(b, ensure_ascii=False)};\n"
         open(os.path.join(ROOT, "data", "equip", eid + ".js"), "w").write(js)
         print(eid, "weapons", len(b["weapons"]), "armor", len(b["armor"]), "renders found", len(found))

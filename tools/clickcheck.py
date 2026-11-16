@@ -16,8 +16,8 @@ AUDIT_JS = r"""
   const SEL = 'a[href], button, [data-part], summary, [role=button], select, input[type=checkbox], canvas#pmc';
   const snap = () => location.hash + '|' + document.querySelector('#main').innerHTML.length + '|' + document.querySelector('#main').innerHTML.slice(0, 4000)
       + '|' + [...document.querySelectorAll('details')].map(d => d.open ? 1 : 0).join('')
-      + '|' + document.querySelector('#side').innerHTML + '|' + (document.activeElement && document.activeElement.id) + '|' + document.querySelector('#monMenu').hidden + '|' + document.body.className + '|' + (document.querySelector('#search') ? document.querySelector('#search').value : '');
-  const reset = async () => { document.querySelector('#monMenu').hidden = true; document.body.classList.remove('drawer'); location.hash = '#/' + route; await sleep(80); history.replaceState(null, '', '#/' + route); };
+      + '|' + document.querySelector('#side').innerHTML + '|' + (document.activeElement && document.activeElement.id) + '|' + document.querySelector('#monMenu').hidden + '|' + document.querySelector('#questMenu').hidden + '|' + document.body.className + '|' + (document.querySelector('#search') ? document.querySelector('#search').value : '');
+  const reset = async () => { document.querySelector('#monMenu').hidden = true; document.querySelector('#questMenu').hidden = true; document.body.classList.remove('drawer'); location.hash = '#/' + route; await sleep(80); history.replaceState(null, '', '#/' + route); };
   await reset();
   const n = document.querySelectorAll(SEL).length;
   const dead = [], skipped = [];

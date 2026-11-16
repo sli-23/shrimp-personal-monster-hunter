@@ -1,0 +1,4 @@
+{
+  "_note": "手动指定更清楚的渲染图（按英文武器名）。keyBlack = 把纯黑背景变透明。",
+  "Silver Shooter": { "url": "https://img.game8.jp/8166254/8180998226ae64a821b7786154577ed3.png/show", "keyBlack": true, "src": "game8.jp" }
+}

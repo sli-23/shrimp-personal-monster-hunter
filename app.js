@@ -157,8 +157,7 @@ function renderChrome(ctx) {
   document.body.classList.toggle("has-bnav", inMon);
   $("#questWrap").style.display = inMon && M.quests.length ? "" : "none";
   if (inMon) {
-    $("#quest").innerHTML = M.quests.map(q => `<option value="${q.id}" ${q.id === S.quest ? "selected" : ""}>${q.name}</option>`).join("");
-    $("#hpLine").textContent = `体力 ${questHP().toLocaleString()}`;
+    $("#questBtn").innerHTML = questBtnHtml();
   }
   const link = (href, t, on, extra = "") => `<a class="it ${on ? "on" : ""}" href="${href}">${extra}${t}</a>`;
   const legend = `<div class="legend2"><span><i style="background:var(--blood2)"></i>红 = 要躲 / 危险</span><span><i style="background:var(--gold)"></i>金 = 能打 / 弱点</span><span><i style="background:var(--paper3)"></i>灰 = 背景信息</span></div>`;
@@ -168,7 +167,7 @@ function renderChrome(ctx) {
     h += `<div class="moncard"><a class="mimg" href="${mLink("")}" title="${M.name} 速读"><img src="${M.icon}" alt=""></a>
       <div class="mtxt"><a class="mname" href="${mLink("")}">${M.name}</a><div class="men">${M.en}${MON.status === "draft" ? ' · <span class="draftt">草稿</span>' : ""}</div>
       <a class="swap" href="#/">⇄ 换怪物</a></div></div>
-      ${M.quests.length ? `<div class="mq">任务 <select id="quest2">${M.quests.map(q => `<option value="${q.id}" ${q.id === S.quest ? "selected" : ""}>${q.name}</option>`).join("")}</select></div>` : ""}`;
+      ${M.quests.length ? `<div class="mq"><button class="qbtn" id="questBtn2" aria-haspopup="menu" aria-expanded="false">${questBtnHtml()}</button></div>` : ""}`;
     for (const p of PAGES) {
       if (!p.group) { h += link(mLink(p.id), p.t, r === p.id); continue; }
       const n = p.items.reduce((s, i) => s + (i.children ? i.children.length : 1), 0);
@@ -192,7 +191,7 @@ function renderChrome(ctx) {
       `<div class="foot">${legend}<div class="legend2"><span><span class="kbd">/</span> 搜索怪物</span></div></div>`;
   }
   $("#side").innerHTML = h;
-  if ($("#quest2")) $("#quest2").onchange = e => { S.quest = e.target.value; saveView(); render(false); };
+  if ($("#questBtn2")) $("#questBtn2").onclick = e => { e.stopPropagation(); toggleQuestMenu($("#questBtn2")); };
   $("#side").querySelectorAll(".gl[data-g]").forEach(g => {
     const t = () => { const k = g.dataset.g; closed.has(k) ? closed.delete(k) : closed.add(k);
       localStorage.setItem("mhr_closed", JSON.stringify([...closed])); g.classList.toggle("closed"); };
@@ -772,12 +771,38 @@ async function render(scrollTop = true, fromHash = false) {
     document.title = (ctx.kind === "guide" ? "轻弩基础" : ctx.kind === "sources" ? "来源" : "怪物图鉴") + " · 猎人手记";
   }
   bind && bind();
-  document.querySelectorAll('[data-act="quest"]').forEach(a => a.onclick = e => { e.preventDefault(); const q = $("#quest"); q.focus(); try { q.showPicker(); } catch (_) {} });
+  document.querySelectorAll('[data-act="quest"]').forEach(a => a.onclick = e => { e.preventDefault(); e.stopPropagation(); toggleQuestMenu(a, true); });
   renderChrome(ctx);
   lastCtx = ctx;
   if (scrollTop) window.scrollTo(0, 0);
   if (ctx.sec && document.getElementById(ctx.sec)) document.getElementById(ctx.sec).scrollIntoView({ block: "start" });
 }
+
+// ---------------- 任务选择菜单 ----------------
+const qTag = q => /烈祸|Hazard/.test(q.name) ? '<span class="qtag">烈祸</span>' : /活动|Event|双凶|Dual/.test(q.name) ? '<span class="qtag ev">活动</span>' : "";
+const qShort = q => q.name.replace(/\s*[(（]烈祸[)）]/, "");
+function questBtnHtml() {
+  const q = quest();
+  return `<span class="ql">任务</span><b>${esc(qShort(q))}</b>${qTag(q)}<span class="hp">${questHP().toLocaleString()}</span><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function toggleQuestMenu(anchor, force) {
+  const menu = $("#questMenu");
+  const open = force ?? menu.hidden;
+  document.querySelectorAll('[aria-haspopup="menu"].qbtn').forEach(b => b.setAttribute("aria-expanded", "false"));
+  if (!open || !M) { menu.hidden = true; return; }
+  menu.innerHTML = `<div class="mh">选择任务 · 体力和异常耐性跟着变</div>` + M.quests.map(q => {
+    const cur = q.id === S.quest, hp = Math.round(M.baseHP * q.hpMul);
+    return `<a href="#" data-q="${q.id}" class="${cur ? "cur" : ""}" role="menuitemradio" aria-checked="${cur}"><span style="flex:1"><span class="qn">${esc(qShort(q))} ${qTag(q)}</span>
+      <span class="qs">体力 ${hp.toLocaleString()} · 攻击 ×${q.atkMul ?? "—"}</span></span>${cur ? '<span class="ck">✓</span>' : ""}</a>`;
+  }).join("");
+  const b = anchor.getBoundingClientRect();
+  const left = Math.min(Math.max(8, b.right - 340), innerWidth - 348);
+  menu.style.left = left + "px"; menu.style.top = (b.bottom + 6) + "px";
+  menu.hidden = false; anchor.getAttribute("aria-haspopup") && anchor.setAttribute("aria-expanded", "true");
+  menu.querySelectorAll("[data-q]").forEach(a => a.onclick = e => { e.preventDefault(); S.quest = a.dataset.q; saveView(); menu.hidden = true; render(false); });
+  const c = menu.querySelector(".cur") || menu.querySelector("a"); c && c.focus({ preventScroll: true });
+}
+document.addEventListener("click", e => { if (!e.target.closest("#questMenu") && !e.target.closest(".qbtn")) $("#questMenu").hidden = true; });
 
 // ---------------- 怪物切换菜单 ----------------
 function toggleMonMenu(ctx, force) {
@@ -822,7 +847,7 @@ $("#search").onkeydown = e => {
 $("#searchRes").onclick = () => { $("#search").value = ""; renderSearch(); };
 document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#searchRes").hidden = true; });
 
-$("#quest").onchange = e => { S.quest = e.target.value; saveView(); render(false); };
+$("#questBtn").onclick = e => { e.stopPropagation(); toggleQuestMenu($("#questBtn")); };
 window.addEventListener("hashchange", () => render(true, true));
 document.addEventListener("keydown", e => {
   if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
