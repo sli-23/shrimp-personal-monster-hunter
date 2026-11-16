@@ -362,20 +362,22 @@ PAGE.map = () => {
           <span>${r.ammo.name} ${r.isRF ? `<span class="rf">速射×${r.bullets}</span>` : ""}</span><span class="mono" style="color:var(--gold2)">${fmt(r.total)}</span></div>`).join("")}</div>
         <a class="btn" style="display:inline-block;margin-top:12px;text-decoration:none" href="#/ammo">看全部弹药 →</a>
       </div>
-      <div class="panel">
-        <h3>全部位${multi ? " × 全状态" : ""}（${col.n} 肉质）</h3>
-        <table><tr><th>部位</th>${M.states.map(s => `<th style="text-align:center">${s.short}</th>`).join("")}</tr>
-        ${M.parts.map(pp => `<tr class="${pp.id === S.part ? "selrow" : ""}"><td><button class="linkbtn" data-part="${pp.id}">${pp.name}</button></td>${pp.hz.map((hh, i) =>
-          `<td class="hzcell${i === S.state && pp.id === S.part ? " cur" : ""}" style="background:${heat(hh[S.col], S.col)}">${hh[S.col]}</td>`).join("")}</tr>`).join("")}</table>
-        ${M.states.some(s => s.guess) ? `<div class="state-note">状态名称与肉质编号的对应是推测的<span class="unv guess">推测</span></div>` : ""}
-      </div>
     </div>
+  </div>
+  <div class="panel hzwide">
+    <h3>全部位${multi ? " × 全状态" : ""}（${col.n} 肉质）<span class="note-s" style="font-family:var(--sans);font-weight:400;margin-left:8px">点部位名或状态名切换</span></h3>
+    <div class="hzscroll"><table class="hzt">
+      <tr><th></th>${M.parts.map(pp => `<th class="${pp.id === S.part ? "cur" : ""}"><button class="linkbtn" data-part="${pp.id}">${pp.name}</button></th>`).join("")}</tr>
+      ${M.states.map((st, i) => `<tr class="${i === S.state ? "selrow" : ""}"><th class="sth">${multi ? `<button class="linkbtn" data-s="${i}"><span class="dotc" style="background:${st.color}"></span>${st.name}</button>` : "肉质"}</th>${M.parts.map(pp =>
+        `<td class="hzcell${i === S.state && pp.id === S.part ? " cur" : ""}" style="background:${heat(pp.hz[i][S.col], S.col)}">${pp.hz[i][S.col]}</td>`).join("")}</tr>`).join("")}
+    </table></div>
+    ${M.states.some(s => s.guess) ? `<div class="state-note">状态名称与肉质编号的对应是推测的<span class="unv guess">推测</span></div>` : ""}
   </div>`;
 };
 function bindMap() {
   const rr = () => { saveView(); render(false); };
   document.querySelectorAll("#main [data-part]").forEach(b => b.onclick = () => { S.part = b.dataset.part; rr(); });
-  document.querySelectorAll("#stateSeg button").forEach(b => b.onclick = () => { S.state = +b.dataset.s; rr(); });
+  document.querySelectorAll("#stateSeg button, .hzt [data-s]").forEach(b => b.onclick = () => { S.state = +b.dataset.s; rr(); });
   document.querySelectorAll("#colSeg button").forEach(b => b.onclick = () => { S.col = b.dataset.c; rr(); });
   document.querySelectorAll("#viewSeg button").forEach(b => b.onclick = () => { S.view = b.dataset.v; rr(); });
   drawPartmap();
