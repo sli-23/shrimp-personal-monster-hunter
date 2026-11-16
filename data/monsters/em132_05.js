@@ -1343,5 +1343,13 @@ MHR.registerMonster({
       "name": "game8.jp 轻弩配装",
       "url": "https://game8.jp/mhrise/465103"
     }
-  }
+  },
+  "relatedEquip": [
+    {
+      "id": "em132_00",
+      "label": "普通爵银龙",
+      "icon": "assets/monsters/em132_00/icon.png",
+      "note": "普通爵银龙：深色身体、红色翼膜。原初形态爵银龙是银白身体、紫色翼膜。"
+    }
+  ]
 });

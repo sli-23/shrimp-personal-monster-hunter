@@ -26,6 +26,13 @@ python3 -I tools/fetch_monster.py 072_08      # MHRice 怪物编号，网址 htt
 - `UNVERIFIED`：所有没确认的东西
 - 状态截图放 `assets/monsters/<id>/states/`，确认是**这只**怪物（变种和普通版长得不一样）
 
+## 3.5 能做的装备（自动，所有怪物一次生成）
+```bash
+python3 -I tools/fetch_equipment.py          # 抓全部大师等级武器 / 防具，按关键怪物写 data/equip/<id>.js（网页缓存在 /tmp/mhr_cache）
+python3 -I tools/equip_assets.py <id> [<普通版id>]   # 合成稀有度颜色图标 + 下载 wiki 上有的渲染图
+```
+- 有「普通版 / 变种」容易搞混的，在 bundle 里加 `relatedEquip: [{ id, label, icon, note }]`，页面会多一个「⚠ 别搞混」标签
+
 ## 4. 完成
 - bundle 和 `index.js` 里都改成 `status: "full"`，`updated` 写日期
 - `node test/calc.test.mjs`

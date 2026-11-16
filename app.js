@@ -105,7 +105,7 @@ function buildPages() {
     { id: "", t: "速读" },
     { group: "打法", items: [{ id: "map", t: "打哪里" }, { id: "ammo", t: "用什么弹" }, { id: "phase", t: phaseList().length > 1 ? "阶段与招式" : "招式", children: phaseList().map((_, i) => i) }] },
     { group: "原理", items: [{ id: "formula", t: "伤害怎么算" }] },
-    { group: "准备", items: [{ id: "builds", t: "推荐配装" }, ...(MON.FOLLOWERS ? [{ id: "followers", t: "盟友" }] : []), { id: "status", t: "异常与道具" }] },
+    { group: "准备", items: [{ id: "equip", t: "能做的装备" }, { id: "builds", t: "推荐配装" }, ...(MON.FOLLOWERS ? [{ id: "followers", t: "盟友" }] : []), { id: "status", t: "异常与道具" }] },
     { id: "videos", t: "视频" },
   ];
   ORDER = [];
@@ -172,7 +172,7 @@ function renderChrome(ctx) {
     for (const p of PAGES) {
       if (!p.group) { h += link(mLink(p.id), p.t, r === p.id); continue; }
       const n = p.items.reduce((s, i) => s + (i.children ? i.children.length : 1), 0);
-      h += `<div class="gl ${closed.has(p.group) ? "closed" : ""}" data-g="${p.group}" role="button" tabindex="0"><span class="chev">▾</span>${p.group}<span class="cnt">${n}</span></div><div class="sub">`;
+      h += `<div class="gl ${closed.has(p.group) ? "closed" : ""}" data-g="${p.group}" role="button" tabindex="0"><span class="chev"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${p.group}<span class="cnt">${n}</span></div><div class="sub">`;
       for (const it of p.items) {
         if (!it.children) { h += link(mLink(it.id), it.t, r === it.id); continue; }
         if (it.children.length === 1) { h += link(mLink(`${it.id}/0`), it.t, r === `${it.id}/0`); continue; }
@@ -541,6 +541,70 @@ function bindFormula() {
   $("#fRF").onchange = e => { S.fRF = e.target.checked; renderFormula(); };
 }
 
+// ---------- 能做的装备 ----------
+const eqLoad = {};
+function loadEquip(id) {
+  if ((D.equip || {})[id]) return Promise.resolve(D.equip[id]);
+  return eqLoad[id] ||= new Promise(ok => { const s = document.createElement("script"); s.src = `data/equip/${id}.js`;
+    s.onload = () => ok((D.equip || {})[id] || { weapons: [], armor: [] }); s.onerror = () => ok({ weapons: [], armor: [] }); document.head.appendChild(s); });
+}
+const RARC = { 1: "#FFFFFF", 2: "#FFFF8B", 3: "#FF9FBD", 4: "#9FE581", 5: "#35CCFF", 6: "#6E8BFF", 7: "#F05A48", 8: "#A9F0FF", 9: "#956EFF", 10: "#FA9A3A" };
+const TYPE_ORDER = ["light_bowgun", "heavy_bowgun", "bow", "great_sword", "long_sword", "short_sword", "dual_blades", "hammer", "horn", "lance", "gun_lance", "slash_axe", "charge_axe", "insect_glaive"];
+const ELE_ZH = { Fire: "火", Water: "水", Thunder: "雷", Ice: "冰", Dragon: "龙", Poison: "毒", Paralysis: "麻痹", Sleep: "睡眠", Blast: "爆破" };
+const n4 = n => `<div class="n4"><span><i>繁</i>${esc(n.tw || "—")}</span><span><i>日</i>${esc(n.ja || "—")}</span><span><i>EN</i>${esc(n.en || "—")}</span></div>`;
+const eqIcon = (icon, rar) => `<img class="eqi" src="assets/equip/icon/${icon}_${rar}.png" alt="" onerror="this.style.visibility='hidden'">`;
+const rarTag = r => `<span class="rar" style="--rc:${RARC[r] || "#fff"}">RARE ${r}</span>`;
+function weaponCard(w) {
+  const meta = [w.typeZh, w.atk != null ? `攻击 ${w.atk}` : "", w.aff ? `会心 ${w.aff}%` : "", w.ele ? `${ELE_ZH[w.ele[0]] || w.ele[0]} ${w.ele[1]}` : ""].filter(Boolean);
+  return `<div class="eq">
+    <div class="eqv">${w.render ? `<img class="rend" src="${w.render}" alt="" loading="lazy">` : `<div class="noimg">${eqIcon(w.icon, w.rar)}<small>暂无图片</small></div>`}${w.render ? eqIcon(w.icon, w.rar) : ""}</div>
+    <div class="eqb">
+      <div class="eqt">${esc(w.names.zh)} ${rarTag(w.rar)}</div>
+      ${n4(w.names)}
+      <div class="eqm">${meta.map(x => `<span>${x}</span>`).join("")}</div>
+      ${w.ammo ? `<div class="ammo">${w.ammo.filter(a => a.n && !/none/i.test(a.n)).map(a => `<span class="${a.rf ? "rfa" : ""}">${esc(a.n)} ${a.cap ?? ""}${a.rf ? " 速射" : ""}</span>`).join("")}</div>` : ""}
+      ${w.path && w.path.length > 1 ? `<div class="path">强化路线：${w.path.map(p => esc(p.zh || p.en)).join(" → ")}</div>` : ""}
+      ${(w.next || []).length ? `<div class="path nx">可继续强化 → ${w.next.map(x => `${esc(x.names.zh)}${x.key && x.key.zh ? `（需要 <b>${esc(x.key.zh)}</b>）` : ""}`).join("、")}</div>` : ""}
+      <a class="src" href="https://mhrise.mhrice.info/${w.href}" target="_blank">MHRice →</a>
+    </div></div>`;
+}
+function armorCard(a) {
+  const rs = [a.render && a.render.m, a.render && a.render.f].filter(Boolean);
+  return `<div class="eq arm">
+    <div class="eqv">${rs.length ? rs.map(r => `<img class="rend" src="${r}" alt="" loading="lazy">`).join("") : `<div class="noimg">${a.pieces[0] ? eqIcon(a.pieces[0].icon, a.pieces[0].rar) : ""}<small>暂无图片</small></div>`}</div>
+    <div class="eqb">
+      <div class="eqt">${esc(a.series.zh)} 系列 ${a.pieces[0] ? rarTag(a.pieces[0].rar) : ""}</div>
+      ${n4(a.series)}
+      <table class="pcs">${a.pieces.map(p => `<tr><td>${eqIcon(p.icon, p.rar)}</td><td><b>${esc(p.names.zh)}</b>${n4(p.names)}</td></tr>`).join("")}</table>
+      ${a.skills && a.skills.length ? `<div class="eqm sk">${a.skills.map(([en, zh, lv]) => `<span>${esc(zh)} +${lv}</span>`).join("")}</div>` : ""}
+      <a class="src" href="https://mhrise.mhrice.info/${a.href}" target="_blank">MHRice →</a>
+    </div></div>`;
+}
+PAGE.equip = () => header("准备 · Equipment", "能做的装备", "这只怪物是「关键怪物」的大师等级武器和防具（来源 MHRice）。名字：简体 / 繁體 / 日本語 / English。", null) + `<div id="eqbox"><div class="note-s">读取中…</div></div>`;
+async function bindEquip() {
+  const id = MON.id, eq = await loadEquip(id);
+  const rel = await Promise.all((MON.relatedEquip || []).map(async r => ({ ...r, eq: await loadEquip(r.id) })));
+  if (!$("#eqbox") || MON.id !== id) return;
+  if (S.eqFor !== id) { S.eqFor = id; S.eqTab = eq.weapons.length ? "w" : "a"; S.eqType = null; }   // 没有武器的怪物默认打开防具
+  const types = TYPE_ORDER.filter(t => eq.weapons.some(w => w.type === t));
+  if (S.eqType && !types.includes(S.eqType)) S.eqType = null;
+  const ws = eq.weapons.filter(w => !S.eqType || w.type === S.eqType).sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || b.rar - a.rar);
+  const relCount = rel.reduce((n, r) => n + r.eq.weapons.length + r.eq.armor.length, 0);
+  const key = [`武器 **${eq.weapons.length}** 件 · 防具 **${eq.armor.length}** 套`, `轻弩、重弩排在最前面`];
+  if (rel.length) key.push(`⚠ 容易搞混：${rel.map(r => `**${r.label}**`).join("、")}的装备放在「别搞混」里`);
+  if (!eq.weapons.length) key.splice(1, 1, `**这只怪物没有武器**（只有防具）`);
+  const tabs = `<div class="seg" id="eqTabs"><button data-t="w" class="${S.eqTab === "w" ? "on" : ""}">武器 ${eq.weapons.length}</button><button data-t="a" class="${S.eqTab === "a" ? "on" : ""}">防具 ${eq.armor.length}</button>${rel.length ? `<button data-t="r" class="${S.eqTab === "r" ? "on" : ""}">⚠ 别搞混 ${relCount}</button>` : ""}</div>`;
+  const chips = S.eqTab === "w" && types.length > 1 ? `<div class="seg" id="eqTypes"><button data-ty="" class="${!S.eqType ? "on" : ""}">全部</button>${types.map(t => `<button data-ty="${t}" class="${S.eqType === t ? "on" : ""}">${eq.weapons.find(w => w.type === t).typeZh}</button>`).join("")}</div>` : "";
+  let body = "";
+  if (S.eqTab === "w") body = ws.length ? `<div class="eqs">${ws.map(weaponCard).join("")}</div>` : `<div class="todo">这只怪物没有可以制作的武器。${rel.length ? "名字相近的武器在「⚠ 别搞混」里。" : ""}</div>`;
+  else if (S.eqTab === "a") body = eq.armor.length ? `<div class="eqs">${eq.armor.map(armorCard).join("")}</div>` : `<div class="todo">没有找到防具。</div>`;
+  else body = rel.map(r => `<div class="relh"><img src="${r.icon}" alt=""><div><b>${r.label}</b>的装备<div class="note-s">${r.note || ""}</div></div></div>
+      <div class="eqs">${r.eq.weapons.sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type)).map(weaponCard).join("")}${r.eq.armor.map(armorCard).join("")}</div>`).join("");
+  $("#eqbox").innerHTML = `<div class="key"><div class="t">要点</div><ul>${key.map(k => `<li>${md(k)}</li>`).join("")}</ul></div><div class="ctrls">${tabs}${chips}</div>${body}`;
+  $("#eqbox").querySelectorAll("#eqTabs button").forEach(b => b.onclick = () => { S.eqTab = b.dataset.t; bindEquip(); });
+  $("#eqbox").querySelectorAll("#eqTypes button").forEach(b => b.onclick = () => { S.eqType = b.dataset.ty || null; bindEquip(); });
+}
+
 // ---------- 推荐配装 ----------
 PAGE.builds = () => header("准备 · Builds", "推荐配装", "", (TEXT.builds && TEXT.builds.key) || []) + (MON.BUILDS.length ? `<div class="builds">${MON.BUILDS.map(b => `<div class="build">
     <h4>${b.title}${b.guess ? '<span class="unv guess">推测</span>' : ""}</h4><div class="w">${b.weapon}</div><div class="st">${b.stats}</div>
@@ -696,7 +760,7 @@ async function render(scrollTop = true, fromHash = false) {
     const [base, arg] = ctx.page.split("/");
     let r = base || "";
     if (base === "phase") { const n = Math.max(0, Math.min(phaseList().length - 1, +arg || 0)); r = `phase/${n}`; html = PAGE.phase(n); }
-    else if (PAGE[r] && (r !== "followers" || MON.FOLLOWERS)) { html = PAGE[r](); bind = { map: bindMap, ammo: bindAmmo, formula: bindFormula, builds: bindBuilds, status: bindStatus }[r]; }
+    else if (PAGE[r] && (r !== "followers" || MON.FOLLOWERS)) { html = PAGE[r](); bind = { map: bindMap, ammo: bindAmmo, formula: bindFormula, builds: bindBuilds, status: bindStatus, equip: bindEquip }[r]; }
     else { r = ""; html = PAGE[""](); }
     ctx.r = r;
     $("#main").innerHTML = relink(html + pager(r));
