@@ -3,8 +3,10 @@
  * 所有结果都是「期望伤害」（会心按会心率加权），所以会带小数。
  */
 (function (root) {
-  const D = (typeof module !== "undefined" && module.exports) ? require("./data.js") : root.MHR;
-  const { SKILLS, SWITCH, MONSTER } = D;
+  const D = (typeof module !== "undefined" && module.exports) ? require("./data/shared.js") : root.MHR;
+  const { SKILLS, SWITCH } = D;
+  // 怪物作为参数传入；不传时用第一个已加载的怪物（兼容旧测试）
+  const defMon = () => Object.values(D.monsters)[0].MONSTER;
 
   const lv = (o, k) => Math.max(0, Math.min(SKILLS[k] ? SKILLS[k].max : 9, +o[k] || 0));
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -49,8 +51,8 @@
   function eleSkillKey(el) { return { dragon: "dragonAtk", fire: "fireAtk", ice: "iceAtk" }[el]; }
 
   /** 单段命中的期望伤害 + 计算步骤 */
-  function hitDamage(ammo, partId, state, o, isRF) {
-    const part = MONSTER.parts.find(p => p.id === partId);
+  function hitDamage(ammo, partId, state, o, isRF, monster) {
+    const part = (monster || defMon()).parts.find(p => p.id === partId);
     const hzRow = part.hz[state];
     const ignoreHz = ammo.hz === "none";
     const hzVal = ignoreHz ? 100 : hzRow[ammo.hz];
@@ -86,18 +88,19 @@
 
   /** 一次扣扳机的总伤害。贯穿弹可传入穿透路径（部位 → 段数）。 */
   function shotDamage(ammo, partId, state, o, opts = {}) {
+    const mon = opts.monster;
     const isRF = !!(opts.rf && ammo.rf);
     const bullets = isRF ? ammo.rf.n : 1;
     const isPierce = ammo.kind === "pierce" || ammo.kind === "element-pierce";
     let perBullet = 0, hitsPerBullet = ammo.hits;
     if (isRF && ammo.rf.hitsPer) hitsPerBullet = ammo.rf.hitsPer;
     if (isPierce && opts.path) {
-      perBullet = Object.entries(opts.path).reduce((s, [pid, n]) => s + n * hitDamage(ammo, pid, state, o, isRF).total, 0);
+      perBullet = Object.entries(opts.path).reduce((s, [pid, n]) => s + n * hitDamage(ammo, pid, state, o, isRF, mon).total, 0);
       hitsPerBullet = Object.values(opts.path).reduce((a, b) => a + b, 0);
     } else {
-      perBullet = hitsPerBullet * hitDamage(ammo, partId, state, o, isRF).total;
+      perBullet = hitsPerBullet * hitDamage(ammo, partId, state, o, isRF, mon).total;
     }
-    const one = hitDamage(ammo, partId, state, o, isRF);
+    const one = hitDamage(ammo, partId, state, o, isRF, mon);
     return { ammo, isRF, bullets, hitsPerBullet, perHit: one.total, hit: one, total: perBullet * bullets };
   }
 
@@ -105,7 +108,7 @@
   function rankAmmo(ammoList, partId, state, o, opts = {}) {
     return ammoList.map(a => {
       const allowRF = opts.rfSet ? opts.rfSet.has(a.id) : !!a.rf;
-      const r = shotDamage(a, partId, state, o, { rf: allowRF && !!a.rf, path: opts.pathFor ? opts.pathFor(a) : null });
+      const r = shotDamage(a, partId, state, o, { rf: allowRF && !!a.rf, path: opts.pathFor ? opts.pathFor(a) : null, monster: opts.monster });
       return r;
     }).sort((x, y) => y.total - x.total);
   }

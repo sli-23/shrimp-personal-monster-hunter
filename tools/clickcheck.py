@@ -6,17 +6,18 @@ import websocket  # websocket-client
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-ROUTES = sys.argv[1:] or ["", "map", "map?v=2d", "ammo", "phase/0", "phase/2", "formula", "builds", "followers", "status", "videos", "sources"]
+ROUTES = sys.argv[1:] or ["", "guide/lbg", "sources"] + [f"m/{m}/{p}" for m in ("em132_05", "em072_08")
+          for p in ("", "map", "map?v=2d", "ammo", "phase/0", "phase/1", "formula", "builds", "status", "videos")] + ["m/em132_05/followers"]
 PORT = 9333
 
 AUDIT_JS = r"""
 (async (route) => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  const SEL = 'a[href], button, [data-part], summary, [role=button], select, input[type=checkbox]';
+  const SEL = 'a[href], button, [data-part], summary, [role=button], select, input[type=checkbox], canvas#pmc';
   const snap = () => location.hash + '|' + document.querySelector('#main').innerHTML.length + '|' + document.querySelector('#main').innerHTML.slice(0, 4000)
       + '|' + [...document.querySelectorAll('details')].map(d => d.open ? 1 : 0).join('')
-      + '|' + document.querySelector('#side').innerHTML + '|' + (document.activeElement && document.activeElement.id);
-  const reset = async () => { location.hash = '#/' + route; await sleep(80); history.replaceState(null, '', '#/' + route); };
+      + '|' + document.querySelector('#side').innerHTML + '|' + (document.activeElement && document.activeElement.id) + '|' + document.querySelector('#monMenu').hidden + '|' + document.body.className + '|' + (document.querySelector('#search') ? document.querySelector('#search').value : '');
+  const reset = async () => { document.querySelector('#monMenu').hidden = true; document.body.classList.remove('drawer'); location.hash = '#/' + route; await sleep(80); history.replaceState(null, '', '#/' + route); };
   await reset();
   const n = document.querySelectorAll(SEL).length;
   const dead = [], skipped = [];
@@ -30,11 +31,16 @@ AUDIT_JS = r"""
     if (el.getAttribute('aria-pressed') === 'true') { skipped.push(label); continue; }   // 已选中的切换按钮
     if (el.tagName === 'SELECT' || (el.tagName === 'INPUT')) { skipped.push(label); continue; } // 表单控件另测
     const before = snap();
-    if (typeof el.click === 'function') el.click(); else el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    if (el.tagName === 'CANVAS') {   // 点在一个部位的中心（左上角是透明背景）
+      const pm = (MHR.partmaps || {})[location.hash.split('/')[2]], r = el.getBoundingClientRect();
+      const c = pm && Object.entries(pm.centers).find(([k]) => !document.querySelector('.hs.sel[data-part="' + k + '"]'));
+      const [cx, cy] = c ? c[1] : [50, 50];
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width * cx / 100, clientY: r.top + r.height * cy / 100 }));
+    } else if (typeof el.click === 'function') el.click(); else el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await sleep(120);
     const after = snap();
     // 指向当前页的链接（href 与当前路由相同）不算死按钮
-    const same = href && href.replace(/^#\/?/, '').split('?')[0] === route.split('?')[0];
+    const same = href && href.replace(/^#\/?/, '').split('?')[0].replace(/\/$/, '') === route.split('?')[0].replace(/\/$/, '');
     if (before === after && !same) dead.push(label);
   }
   return { route, total: n, dead, skipped: skipped.length };

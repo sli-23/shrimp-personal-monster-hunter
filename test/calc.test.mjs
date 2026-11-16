@@ -1,7 +1,9 @@
 // node test/calc.test.mjs — 公式输出与手算对照
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const D = require("../data.js");
+const D = require("../data/shared.js");
+require("../data/monsters/em132_05.js");
+require("../data/monsters/em072_08.js");
 const C = require("../calc.js");
 const A = id => D.AMMO.find(a => a.id === id);
 let fail = 0;
@@ -34,5 +36,11 @@ near("affinity head s1 (no WEX)", C.affinity(o1, 30), 40);
 
 // 5) 穿甲榴弹无视肉质、不会会心：320×0.15 = 48 物理 + 火 5×1×4.2 = 21
 near("Sticky2 wing s0", C.hitDamage(A("st2"), "wing", 0, { atk: 320, critEye: 7 }, false).total, 48 + 21);
+
+// 6) 显式传入怪物：怪异克服天廻龙 头部弹肉质 45 → 与爵银龙头部同值，LV3通常弹 结果应相同
+const SH = D.monsters.em072_08.MONSTER;
+near("N3 head s0 (Shagaru, explicit monster)", C.hitDamage(A("n3"), "head", 0, o1, false, SH).total, 362 * 0.34 * 0.45 * 1.2 * 1.36);
+// 7) 天廻龙躯干弹肉质 15：同一发弹，伤害按 15/45 缩放，且不触发弱点特效（会心 40% → ×1.16）
+near("N3 torso s0 (Shagaru)", C.hitDamage(A("n3"), "torso", 0, o1, false, SH).total, 362 * 0.34 * 0.15 * 1.2 * 1.16);
 
 process.exit(fail ? 1 : 0);

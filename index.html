@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>轻弩 × 原初形态爵银龙 · 伤害与打法手册</title>
+<title>猎人手记 · 轻弩</title>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -332,6 +333,51 @@ details.more summary{cursor:pointer;font:600 13px var(--sans);color:var(--paper2
 .tier{float:right;font:700 13px var(--mono);color:var(--ink);background:var(--gold);padding:1px 8px;border-radius:3px}
 .tier.a{background:var(--paper3)}
 
+/* ================= v3：多怪物 ================= */
+.top .brand img{width:30px;height:30px;filter:drop-shadow(0 2px 6px rgba(179,32,42,.45))}
+.top nav a.mon{display:inline-flex;align-items:center;gap:6px;color:var(--gold2)}
+.top nav a.mon img{width:22px;height:22px}
+.search{position:relative;display:flex;align-items:center}
+.search input{width:240px;background:var(--ink);color:var(--paper);border:1px solid var(--line2);border-radius:3px;padding:7px 30px 7px 10px;font:13px var(--sans)}
+.search input:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+.search .kbd{position:absolute;right:8px;pointer-events:none}
+#searchRes{position:absolute;top:40px;left:0;right:0;background:var(--ink2);border:1px solid var(--line2);border-radius:3px;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:4px}
+#searchRes a{display:flex;align-items:center;gap:8px;padding:7px 8px;color:var(--paper);text-decoration:none;border-radius:2px;font-size:14px}
+#searchRes a small{color:var(--paper3);font-size:11.5px}
+#searchRes a img{width:24px;height:24px}
+#searchRes a:hover,#searchRes a.first{background:var(--ink3)}
+#searchRes .none{padding:8px;color:var(--paper3);font-size:13px}
+#questWrap{display:flex;align-items:center;gap:8px}
+.side .moncard{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:center;padding:2px 8px 14px;margin:0 2px 6px;border-bottom:1px solid var(--line)}
+.side .moncard .mimg img{width:56px;height:56px;display:block;filter:drop-shadow(0 0 10px rgba(212,165,74,.25)) drop-shadow(0 4px 8px rgba(0,0,0,.6));transition:transform .2s}
+.side .moncard .mimg:hover img{transform:scale(1.06)}
+.side .moncard .mname{display:block;font:700 16px/1.25 var(--serif);color:var(--paper);text-decoration:none}
+.side .moncard .mname:hover{color:var(--gold2)}
+.side .moncard .men{font-size:11.5px;color:var(--paper3);margin-top:1px}
+.side .moncard .draftt{color:var(--paper2)}
+.side .moncard .swap{display:inline-block;margin-top:5px;font-size:12px;color:var(--paper3);text-decoration:none}
+.side .moncard .swap:hover{color:var(--gold2)}
+.mapimg.hm canvas{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 10px 22px rgba(0,0,0,.55))}
+.side a.it.swap{font-size:12.5px;color:var(--paper3);margin-bottom:4px}
+.side a.it img.mi{width:22px;height:22px}
+.side .gl.static{cursor:default}
+.badge{display:inline-block;font:600 10.5px var(--sans);padding:1px 6px;border-radius:2px;vertical-align:1px}
+.badge.full{color:var(--gold2);border:1px solid rgba(212,165,74,.5)}
+.badge.draft{color:var(--paper3);border:1px dashed var(--line2)}
+.badge.sm{margin-left:auto;font-size:10px}
+.todo{border:1px dashed var(--line2);border-radius:3px;padding:12px 14px;color:var(--paper2);font-size:14px;margin:0 0 18px;background:rgba(232,220,196,.03)}
+.linkbtn{background:none;border:0;color:var(--paper);font:inherit;padding:0;cursor:pointer;text-decoration:underline dotted var(--paper3);text-underline-offset:3px}
+.linkbtn:hover{color:var(--gold2)}
+.mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;margin-top:6px}
+.mcard{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:3px;background:var(--ink2);text-decoration:none;color:var(--paper);transition:border-color .15s,transform .15s}
+.mcard:hover,.mcard:focus-visible{border-color:var(--gold);transform:translateY(-2px);outline:none}
+.mcard img{width:84px;height:84px;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.mcard .mt{font:700 18px var(--serif)}
+.mcard .ms{font-size:12px;color:var(--paper3);margin-top:2px}
+.mcard .mr{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13.5px;margin-top:6px}
+.mcard .mr b{color:var(--gold2)}
+.mcard .wk img{width:16px;height:16px;vertical-align:-3px}
+table.recent td a{color:var(--paper);font-weight:600}
 @media (max-width:1100px){
   .shell{grid-template-columns:1fr}
   .side{position:static;height:auto}
@@ -340,19 +386,121 @@ details.more summary{cursor:pointer;font:600 13px var(--sans);color:var(--paper2
   .phases,.builds{grid-template-columns:1fr 1fr}
   main#main{padding:20px}
 }
+
+/* ---------- 怪物切换菜单 ---------- */
+.top nav button.mon{display:inline-flex;align-items:center;gap:7px;background:var(--ink3);border:1px solid var(--line);color:var(--gold2);font:600 14px var(--sans);padding:6px 10px;border-radius:3px;cursor:pointer}
+.top nav button.mon:hover,.top nav button.mon[aria-expanded="true"]{border-color:var(--gold)}
+.top nav button.mon img{width:22px;height:22px}
+.top nav button.mon .car{color:var(--paper3);font-size:10px;margin-left:2px}
+.monmenu{position:fixed;z-index:50;min-width:300px;background:var(--ink2);border:1px solid var(--line2);border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.6);padding:6px}
+.monmenu .mh{font:600 11px var(--mono);letter-spacing:.14em;color:var(--paper3);padding:6px 8px}
+.monmenu a{display:flex;align-items:center;gap:10px;padding:8px;border-radius:3px;color:var(--paper);text-decoration:none}
+.monmenu a:hover,.monmenu a:focus-visible{background:var(--ink3);outline:none}
+.monmenu a img{width:34px;height:34px}
+.monmenu a b{display:block;font:700 14.5px var(--serif)}
+.monmenu a small{color:var(--paper3);font-size:11.5px}
+.monmenu a.cur{background:rgba(212,165,74,.08)}
+.monmenu a .ck{margin-left:auto;color:var(--gold2)}
+.monmenu .all{border-top:1px solid var(--line);margin-top:4px;padding-top:8px;font-size:13px;color:var(--paper2)}
+.menubtn,.bnav,.scrim{display:none}
+.side .mq{display:none}
+
+/* ---------- 手机端 ---------- */
+@media (max-width:760px){
+  html,body{overflow-x:hidden;max-width:100vw}
+  body{font-size:14.5px}
+  main#main{max-width:100vw;overflow-x:hidden}
+  .mapgrid > *,.calcgrid > *,.grid2 > *,.hero2 > *,.blocks > *,.tiles > *{min-width:0}
+  .calcgrid > .calc{order:2}
+  .calc .f input[type=number]{width:72px}
+  .top .right{flex:none}
+  .key li,.tile .v,.tile .s{overflow-wrap:anywhere}
+  .ph p{overflow-wrap:anywhere}
+  .top{height:54px;gap:8px;padding:0 10px}
+  .menubtn{display:grid;place-items:center;width:38px;height:38px;background:none;border:1px solid var(--line);border-radius:3px;color:var(--paper);font-size:18px;cursor:pointer;flex:none}
+  .top .brand b{display:none}
+  .top .brand img{width:24px;height:24px}
+  .top nav a:not(.mon){display:none}
+  .top nav{min-width:0;flex:1}
+  .top nav button.mon{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13.5px;padding:6px 8px}
+  .top .right{margin-left:0;gap:6px}
+  #questWrap{display:none !important}
+  .search input{width:38px;padding:7px 8px;color:transparent;cursor:pointer;transition:width .2s}
+  .search input::placeholder{color:transparent}
+  .search::before{content:"⌕";position:absolute;left:12px;color:var(--paper2);pointer-events:none;font-size:17px}
+  .search input:focus{width:min(62vw,260px);color:var(--paper);padding-left:30px;cursor:text}
+  .search input:focus::placeholder{color:var(--paper3)}
+  .search .kbd{display:none}
+  #searchRes{left:auto;right:0;width:min(86vw,320px)}
+  .shell{display:block}
+  .side{position:fixed;top:54px;left:0;bottom:0;width:min(84vw,300px);z-index:45;height:auto;transform:translateX(-102%);transition:transform .22s ease;background:var(--ink);box-shadow:10px 0 30px rgba(0,0,0,.5)}
+  body.drawer .side{transform:none}
+  .scrim{display:block;position:fixed;inset:54px 0 0 0;background:rgba(0,0,0,.55);z-index:44;opacity:0;pointer-events:none;transition:opacity .2s}
+  body.drawer .scrim{opacity:1;pointer-events:auto}
+  .side .mq{display:flex;align-items:center;gap:8px;padding:0 10px 12px;font-size:12.5px;color:var(--paper3)}
+  .side .mq select{flex:1;min-width:0}
+  main#main{padding:18px 14px 96px}
+  .ph h1{font-size:25px}
+  .key ul{font-size:15px}
+  .tiles{grid-template-columns:1fr 1fr}
+  .tile{border-bottom:1px solid var(--line)}
+  .tile:nth-child(2n){border-right:0}
+  .tile .v{font-size:18px}
+  .secs{grid-template-columns:1fr}
+  .secs a{border-right:0 !important;border-top:1px solid var(--line)}
+  .ctrls{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .seg{flex:none}
+  .seg button{padding:7px 10px;font-size:12.5px}
+  .mapgrid,.calcgrid,.grid2,.hero2,.fol,.builds,.phases{grid-template-columns:1fr !important}
+  .blocks{grid-template-columns:1fr}
+  .hs .dot{width:32px;height:32px;font-size:13px}
+  .hs .lb{display:none}
+  .hs.sel .lb{display:block;font-size:10.5px;padding:0 5px}
+  .hs .dot{width:30px;height:30px;font-size:12.5px}
+  .panel{padding:12px}
+  .panel:has(> table),.panel:has(> table.rank){overflow-x:auto}
+  table.rank th:nth-child(4),table.rank td:nth-child(4),table.rank th:last-child,table.rank td:last-child{display:none}
+  table.moves,table.moves tbody,table.moves tr,table.moves td{display:block;width:100%}
+  table.moves tr:first-child{display:none}
+  table.moves tr{border-bottom:1px solid var(--line);padding:8px 0}
+  table.moves td{border:0;padding:2px 0}
+  table.moves td.mv{white-space:normal;font-size:15px}
+  .strip{grid-template-columns:repeat(4,1fr) !important}
+  .summary{grid-template-columns:1fr}
+  .status-row{grid-template-columns:70px 1fr;row-gap:2px}
+  .status-row > span.muted{grid-column:1/-1;font-size:12px}
+  .mcards{grid-template-columns:1fr}
+  .mcard img{width:64px;height:64px}
+  .pager a{max-width:none;font-size:13px}
+  .vids{grid-template-columns:1fr 1fr}
+  .bnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(16,13,11,.97);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(6px)}
+  .bnav a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--paper3);font:500 11px var(--sans);padding:4px 0;border-radius:3px}
+  .bnav a .i{font-size:17px;line-height:1.1}
+  .bnav a.on{color:var(--gold2)}
+  .bnav a.on .i{filter:drop-shadow(0 0 6px rgba(240,207,122,.6))}
+  .monmenu{left:8px !important;right:8px;min-width:0}
+}
 </style>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#/"><img src="assets/icons/malzeno_primordial.png" alt=""><b>猎人手记 <span>· 轻弩</span></b></a>
+  <button class="menubtn" id="menuBtn" aria-label="目录">☰</button>
+  <a class="brand" href="#/"><img src="assets/logo.svg" alt="猎人手记"><b>猎人手记 <span>· 轻弩</span></b></a>
   <nav id="topnav"></nav>
-  <div class="right">任务 <select id="quest"></select> <span class="hp" id="hpLine"></span></div>
+  <div class="right">
+    <div class="search"><input id="search" type="search" placeholder="搜索怪物（中 / 日 / 英）" autocomplete="off"><span class="kbd">/</span><div id="searchRes" hidden></div></div>
+    <span id="questWrap">任务 <select id="quest"></select> <span class="hp" id="hpLine"></span></span>
+  </div>
 </header>
 <div class="shell">
   <aside class="side" id="side"></aside>
   <main id="main"></main>
 </div>
-<script src="data.js"></script>
+<div class="scrim" id="scrim"></div>
+<div class="monmenu" id="monMenu" hidden></div>
+<nav class="bnav" id="bnav"></nav>
+<script src="data/shared.js"></script>
+<script src="data/monsters/index.js"></script>
 <script src="calc.js"></script>
 <script src="app.js"></script>
 </body>
