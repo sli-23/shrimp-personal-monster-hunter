@@ -28,6 +28,7 @@ AUDIT_JS = r"""
     const label = (el.tagName + ' ' + (el.textContent || el.getAttribute('href') || el.dataset.part || '').trim().replace(/\s+/g, ' ')).slice(0, 60);
     const href = el.getAttribute && el.getAttribute('href');
     if (href && /^https?:/.test(href)) { skipped.push(label); continue; }           // 外链
+    if (el.disabled) { skipped.push(label); continue; }   // 禁用的按钮（如等级 0 的 −）
     if (el.getAttribute('aria-pressed') === 'true') { skipped.push(label); continue; }   // 已选中的切换按钮
     if (el.tagName === 'SELECT' || (el.tagName === 'INPUT')) { skipped.push(label); continue; } // 表单控件另测
     const before = snap();
