@@ -771,7 +771,7 @@ MHR.registerMonster({
           "n": "翼盾冲撞 → 尾刺",
           "yi": true,
           "tell": "翼像盾一样向前冲，范围宽",
-          "dodge": "被撞到就**翔虫受身往侧边**，追击的尾刺会落空",
+          "dodge": "被撞到就**翔虫受身往侧边**，追击的尾刺会落空 <a href=\"#/guide/lbg?sec=wirefall\">怎么做 →</a>",
           "punish": "?",
           "blood": false,
           "src": "game8jp"

@@ -123,7 +123,7 @@ function parseRoute() {
   const seg = (path || "").split("/").filter(Boolean);
   if (seg[0] === "m" && seg[1]) return { kind: "mon", id: seg[1], page: seg.slice(2).join("/"), qs };
   if (LEGACY.has(seg[0])) return { kind: "legacy", page: seg.join("/"), qs };       // v2 旧网址
-  if (seg[0] === "guide") return { kind: "guide", page: seg[1] || "lbg" };
+  if (seg[0] === "guide") return { kind: "guide", page: seg[1] || "lbg", sec: new URLSearchParams(qs || "").get("sec") };
   if (seg[0] === "sources") return { kind: "sources" };
   return { kind: "library" };
 }
@@ -404,7 +404,11 @@ function isApplied(b) {
 }
 function renderCalc() {
   const num = (k, label, step = 1) => `<div class="f"><label>${label}</label><input type="number" data-k="${k}" step="${step}" value="${S.o[k]}"></div>`;
-  const sel = k => `<div class="f"><label>${SKILLS[k].name}</label><select data-k="${k}">${Array.from({ length: SKILLS[k].max + 1 }, (_, i) => `<option ${i == S.o[k] ? "selected" : ""}>${i}</option>`).join("")}</select></div>`;
+  // 技能等级：− / + 步进器 + 等级点（代替原生下拉）
+  const sel = k => { const mx = SKILLS[k].max, v = S.o[k];
+    return `<div class="f"><label>${SKILLS[k].name}</label><div class="stp" data-stp="${k}">
+      <span class="pips">${Array.from({ length: mx }, (_, i) => `<i class="${i < v ? "on" : ""}"></i>`).join("")}</span>
+      <button type="button" data-d="-1" aria-label="减少" ${v <= 0 ? "disabled" : ""}>−</button><span class="lv">${v}<small>/${mx}</small></span><button type="button" data-d="1" aria-label="增加" ${v >= mx ? "disabled" : ""}>+</button></div></div>`; };
   const grp = (t, open, inner) => `<details ${open ? "open" : ""}><summary>${t}</summary>${inner}</details>`;
   $("#calc").innerHTML = `<h3>计算器</h3>
     ${MON.BUILDS.length ? `<div class="presets" style="margin:0 0 6px">${MON.BUILDS.map(b => { const on = isApplied(b); return `<button class="btn${on ? " on" : ""}" data-b="${b.id}" aria-pressed="${on}">${on ? "✓ 已套用：" : "套用："}${b.short}</button>`; }).join("")}</div>` : ""}
@@ -418,6 +422,14 @@ function renderCalc() {
     S.o[el.dataset.k] = el.type === "checkbox" ? el.checked : +el.value; renderRank(); refreshPresets();
   });
   $("#calc").querySelectorAll("[data-b]").forEach(el => el.onclick = () => applyBuild(el.dataset.b));
+  $("#calc").querySelectorAll("[data-stp]").forEach(box => box.querySelectorAll("button").forEach(b => b.onclick = () => {
+    const k = box.dataset.stp, mx = SKILLS[k].max;
+    S.o[k] = Math.max(0, Math.min(mx, S.o[k] + +b.dataset.d));
+    box.querySelector(".lv").innerHTML = `${S.o[k]}<small>/${mx}</small>`;
+    box.querySelectorAll(".pips i").forEach((p, i) => p.classList.toggle("on", i < S.o[k]));
+    box.querySelector('[data-d="-1"]').disabled = S.o[k] <= 0; box.querySelector('[data-d="1"]').disabled = S.o[k] >= mx;
+    renderRank(); refreshPresets();
+  }));
 }
 function refreshPresets() {
   document.querySelectorAll("#calc [data-b]").forEach(el => { const b = MON.BUILDS.find(x => x.id === el.dataset.b), on = isApplied(b);
@@ -621,11 +633,33 @@ function guidePage() {
     ["Fanning Maneuver", "用翔虫向左右快速侧移，同时<b>短时间提高攻击</b>。", "fandomSwitch"],
     ["Critical Firepower（会心射击）", "通常弹 ×1.3、散弹 ×1.2、贯穿弹 ×1.1，但会心距离变窄、后坐力变大。计算器「其他」里可以打开。", "mhrdmg"],
   ];
-  return header("通用知识", "轻弩基础", "跟怪物无关、所有轻弩都用得上的知识。", [`**Wyvern Counter**：翔虫后撤 + 时机对了就反击，可以抵消吐息`, `**狂龙症【蚀】**：被感染时**持续扣血**，但攻击、回避上升；克服后回满红血、会心上升`, `**伏魔耗命**：啮生虫**一直吸血**，换来攻击上升；切换翔虫技（迅速切换）可以回血`]) + `
+  return header("通用知识", "轻弩基础", "跟怪物无关、所有轻弩都用得上的知识。", [`被打飞时按**翔虫受身**，配合方向键**往侧边**躲追击`, `**Wyvern Counter**：翔虫后撤 + 时机对了就反击，可以抵消吐息`, `**狂龙症【蚀】**：被感染时**持续扣血**，但攻击、回避上升；克服后回满红血、会心上升`, `**伏魔耗命**：啮生虫**一直吸血**，换来攻击上升；切换翔虫技（迅速切换）可以回血`]) + `
   <h2 class="h">翔虫技 / 切换技</h2>
   <div class="panel" style="padding:6px 12px"><table class="moves"><tr><th>名字</th><th>做什么</th><th>来源</th></tr>
     ${G.map(([n, d, s]) => `<tr><td class="mv">${n}</td><td>${d}</td><td class="note-s">${srcLink(s)}</td></tr>`).join("")}</table></div>
   <div class="note-s" style="margin-top:6px">中文名只在确认过时才写；没确认的保留英文名<span class="unv">未验证</span></div>
+  <h2 class="h" id="wirefall">翔虫受身：被打飞后马上恢复</h2>
+  <div class="grid2">
+    <div class="panel"><h3>怎么做</h3>
+      <ol style="margin:0;padding-left:20px;font-size:14.5px;line-height:1.8;color:var(--paper2)">
+        <li>被怪物<b>打飞 / 撞飞</b>的瞬间（人还在空中）</li>
+        <li>按<b>翔虫受身键</b>（Switch 默认 <span class="kbd">ZR</span>；其他平台看「按键设置 → 翔虫受身」）</li>
+        <li>同时用<b>左摇杆选方向</b>：原初爵银龙的「翼盾冲撞 → 尾刺」要<b>往侧边</b>，不要往前后</li>
+        <li>落地后马上拉开距离或继续射击</li>
+      </ol>
+      <div class="note-s" style="margin-top:8px">需要剩余翔虫（翔虫槽）。按键名称以游戏内设置为准<span class="unv">未验证</span></div></div>
+    <div class="panel"><h3>为什么要往侧边</h3>
+      <p style="margin:0;font-size:14.5px;color:var(--paper2);line-height:1.8">爵银龙的冲撞后面<b>固定接一下尾刺</b>，尾刺是沿着正前方刺过来的。往侧边受身就离开了尾刺的直线，往后受身反而会被刺中（game8）。</p></div>
+  </div>
+  <div class="vids" style="margin-top:12px">${[
+    ["pTz_KUBGM00", "官方新动作指南 · 翔虫篇", "CapcomChannel", "5:29", "日", "官方教学，含翔虫受身"],
+    ["hM2tUSrbj3c", "新手要知道的 8 个小贴士（含翔虫受身）", "单身狗游戏频道", "11:59", "中", "中文，新手向"],
+    ["eFAMJD0kM1E", "绝对必须的技巧！翔虫基础篇", "タカティン", "10:30", "日", "53 万播放的翔虫基础"],
+    ["GFdEwxXGdS0", "受身的诀窍 · 翔虫大师之路", "missing31", "14:09", "日", "专讲受身时机和方向"],
+    ["sVNzyQv5ehQ", "Hunting 101 – Wirebug", "Capcom USA", "6:03", "英", "官方英文教学"],
+    ["eMlSSey1bWI", "翔虫系统 + 操龙 极速攻略（翔虫受身）", "天神", "10:35", "中", "中文，翔虫受身章节"]].map(([id, t, ch, len, lang, why], i) => `
+    <a class="vid" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener"><div class="th"><img src="assets/yt/${id}.jpg" alt="" loading="lazy">${i < 2 ? '<span class="star">先看</span>' : ""}<span class="len">${len}</span><span class="lang">${lang}</span></div>
+      <div class="bd"><div class="tt">${t}</div><div class="ch">${ch}</div><div class="why">→ ${why}</div></div></a>`).join("")}</div>
   <h2 class="h">会扣血的技能（不是怪物打的）</h2>
   <div class="grid2">
     <div class="panel"><h3>狂龙症【蚀】<span class="muted" style="font:12px var(--sans)"> Bloodlust</span></h3>
@@ -678,6 +712,7 @@ async function render(scrollTop = true, fromHash = false) {
   renderChrome(ctx);
   lastCtx = ctx;
   if (scrollTop) window.scrollTo(0, 0);
+  if (ctx.sec && document.getElementById(ctx.sec)) document.getElementById(ctx.sec).scrollIntoView({ block: "start" });
 }
 
 // ---------------- 怪物切换菜单 ----------------
