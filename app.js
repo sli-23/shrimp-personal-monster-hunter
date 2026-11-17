@@ -105,7 +105,7 @@ function buildPages() {
     { id: "", t: "速读" },
     { group: "打法", items: [{ id: "map", t: "打哪里" }, { id: "ammo", t: "用什么弹" }, { id: "phase", t: phaseList().length > 1 ? "阶段与招式" : "招式", children: phaseList().map((_, i) => i) }] },
     { group: "原理", items: [{ id: "formula", t: "伤害怎么算" }] },
-    { group: "准备", items: [{ id: "equip", t: "能做的装备" }, { id: "builds", t: "推荐配装" }, ...(MON.FOLLOWERS ? [{ id: "followers", t: "盟友" }] : []), { id: "status", t: "异常与道具" }] },
+    { group: "准备", items: [{ id: "equip", t: "能做的装备" }, { id: "drops", t: "素材掉落" }, { id: "builds", t: "推荐配装" }, ...(MON.FOLLOWERS ? [{ id: "followers", t: "盟友" }] : []), { id: "status", t: "异常与道具" }] },
     { id: "videos", t: "视频" },
   ];
   ORDER = [];
@@ -620,6 +620,58 @@ async function bindEquip() {
   $("#eqbox").querySelectorAll("#eqTypes button").forEach(b => b.onclick = () => { S.eqType = b.dataset.ty || null; bindEquip(); });
 }
 
+// ---------- 素材掉落 ----------
+const rwLoad = {};
+function loadRewards(id) {
+  if ((D.rewards || {})[id]) return Promise.resolve(D.rewards[id]);
+  return rwLoad[id] ||= new Promise(ok => { const s = document.createElement("script"); s.src = `data/rewards/${id}.js`;
+    s.onload = () => ok((D.rewards || {})[id] || {}); s.onerror = () => ok({}); document.head.appendChild(s); });
+}
+// 每组掉落的中文标题
+function rwLabel(kind, g, i, all) {
+  const en = (g.part && g.part.en) || "", zh = g.part && g.part.zh;
+  if (kind === "target") return "目标报酬（任务结算）";
+  if (kind === "capture") return "捕获报酬";
+  if (kind === "buddy") return "随从（艾露猫 / 加尔克）带回";
+  if (kind === "carves") { const m = en.match(/Main body \(x(\d+)\)/); if (m) return `剥取本体 ×${m[1]}`; if (/Severed/.test(en)) return "剥取切断的尾巴"; return zh || en; }
+  if (kind === "drops") { if (/Riding/.test(en)) return "操龙时掉落"; return "掉落物（硬直、倒地时掉在地上）"; }
+  if (kind === "breaks") return `破坏「${zh || en}」${g.rule === "Any of" && g.idx.length > 1 ? "（任意一边）" : ""}`;
+  return zh || en;
+}
+const RW_ORDER = ["breaks", "target", "carves", "drops", "capture", "buddy"];
+const itemImg = it => `<img class="iti" src="assets/items/${it.icon}_${it.color}.png" alt="" onerror="this.style.visibility='hidden'">`;
+PAGE.drops = () => header("准备 · Drops", "素材掉落", "大师等级的掉落概率（来源 MHRice）。想要哪个素材，先看第一张表。", null) + `<div id="rwbox"><div class="note-s">读取中…</div></div>`;
+async function bindDrops() {
+  const id = MON.id, rw = await loadRewards(id);
+  if (!$("#rwbox") || MON.id !== id) return;
+  const groups = RW_ORDER.flatMap(k => (rw[k] || []).map((g, i) => ({ kind: k, g, label: rwLabel(k, g, i) })));
+  if (!groups.length) { $("#rwbox").innerHTML = TODO("掉落数据"); return; }
+  // 素材 → 所有来源
+  const byItem = {};
+  groups.forEach(({ g, label, kind }) => g.items.forEach(it => {
+    const k = it.n.zh || it.n.en; (byItem[k] ||= { it, src: [] }).src.push({ label, kind, p: it.p, qty: it.qty });
+  }));
+  const items = Object.values(byItem).map(x => ({ ...x, best: x.src.slice().sort((a, b) => b.p - a.p)[0] }))
+    .filter(x => !/秘宝|Treasure/.test(x.it.n.zh || x.it.n.en)).sort((a, b) => a.best.p - b.best.p);
+  const rare = items[0], hasSever = (rw.carves || []).some(g => /Severed/.test((g.part || {}).en || ""));
+  const topBreak = (rw.breaks || []).map(g => ({ g, it: g.items.slice().sort((a, b) => b.p - a.p)[0] })).sort((a, b) => b.it.p - a.it.p)[0];
+  const key = [rare ? `最难拿：**${rare.it.n.zh}**（最高只有 ${rare.best.p}%：${rare.best.label}）` : "",
+    topBreak ? `破坏「**${topBreak.g.part.zh}**」${topBreak.it.p}% 拿 **${topBreak.it.n.zh}**` : "",
+    hasSever ? `断尾要用**斩击**：轻弩用**斩裂弹**的刃` : ""].filter(Boolean);
+  const bar = p => `<div class="pbar"><i style="width:${p}%"></i></div>`;
+  const nm = it => `<span class="itn"><b>${esc(it.n.zh || it.n.en)}</b><small>${[it.n.tw, it.n.ja, it.n.en].filter(Boolean).map(esc).join(" · ")}</small></span>`;
+  $("#rwbox").innerHTML = `<div class="key"><div class="t">要点</div><ul>${key.map(k => `<li>${md(k)}</li>`).join("")}</ul></div>
+    <h2 class="h">想要哪个素材 → 去哪拿 <span class="muted" style="font:13px var(--sans)">（越稀有越靠前）</span></h2>
+    <div class="panel" style="padding:6px 12px"><table class="rwt"><tr><th></th><th>素材</th><th>最好的来源</th><th class="num">概率</th><th>其他来源</th></tr>
+    ${items.map(x => `<tr><td>${itemImg(x.it)}</td><td>${nm(x.it)}</td><td><span class="src-best">${x.best.label}</span></td>
+      <td class="num"><b class="${x.best.p <= 5 ? "rare" : ""}">${x.best.p}%</b>${bar(x.best.p)}</td>
+      <td class="note-s">${x.src.filter(s => s !== x.best).sort((a, b) => b.p - a.p).map(s => `${s.label} ${s.p}%`).join("　")}</td></tr>`).join("")}</table></div>
+    <h2 class="h">按来源</h2>
+    <div class="rwcards">${groups.map(({ g, label, kind }) => `<div class="rwc ${kind}"><div class="rwh">${label}</div>
+      ${g.items.slice().sort((a, b) => b.p - a.p).map(it => `<div class="rwi">${itemImg(it)}${nm(it)}<span class="qty">×${it.qty}</span><span class="pp ${it.p <= 5 ? "rare" : ""}">${it.p}%</span>${bar(it.p)}</div>`).join("")}</div>`).join("")}</div>
+    <p class="note-s" style="margin-top:12px">概率是每一次判定的概率；剥取 ×4 表示剥 4 次，每次各自判定。来源：<a href="https://mhrise.mhrice.info/monster/${M.mhrice || MON.id.slice(2)}.html#s-reward-mr" target="_blank">MHRice</a></p>`;
+}
+
 // ---------- 推荐配装 ----------
 PAGE.builds = () => header("准备 · Builds", "推荐配装", "", (TEXT.builds && TEXT.builds.key) || []) + (MON.BUILDS.length ? `<div class="builds">${MON.BUILDS.map(b => `<div class="build">
     <h4>${b.title}${b.guess ? '<span class="unv guess">推测</span>' : ""}</h4><div class="w">${b.weapon}</div><div class="st">${b.stats}</div>
@@ -775,7 +827,7 @@ async function render(scrollTop = true, fromHash = false) {
     const [base, arg] = ctx.page.split("/");
     let r = base || "";
     if (base === "phase") { const n = Math.max(0, Math.min(phaseList().length - 1, +arg || 0)); r = `phase/${n}`; html = PAGE.phase(n); }
-    else if (PAGE[r] && (r !== "followers" || MON.FOLLOWERS)) { html = PAGE[r](); bind = { map: bindMap, ammo: bindAmmo, formula: bindFormula, builds: bindBuilds, status: bindStatus, equip: bindEquip }[r]; }
+    else if (PAGE[r] && (r !== "followers" || MON.FOLLOWERS)) { html = PAGE[r](); bind = { map: bindMap, ammo: bindAmmo, formula: bindFormula, builds: bindBuilds, status: bindStatus, equip: bindEquip, drops: bindDrops }[r]; }
     else { r = ""; html = PAGE[""](); }
     ctx.r = r;
     $("#main").innerHTML = relink(html + pager(r));
