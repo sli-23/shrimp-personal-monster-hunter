@@ -123,7 +123,7 @@ function parseRoute() {
   const seg = (path || "").split("/").filter(Boolean);
   if (seg[0] === "m" && seg[1]) return { kind: "mon", id: seg[1], page: seg.slice(2).join("/"), qs };
   if (LEGACY.has(seg[0])) return { kind: "legacy", page: seg.join("/"), qs };       // v2 旧网址
-  if (seg[0] === "guide") return { kind: "guide", page: seg[1] || "lbg", sec: new URLSearchParams(qs || "").get("sec") };
+  if (seg[0] === "guide") return { kind: "guide", page: seg[1] || "lbg", sec: new URLSearchParams(qs || "").get("sec"), qs };
   if (seg[0] === "sources") return { kind: "sources" };
   return { kind: "library" };
 }
@@ -147,10 +147,10 @@ const relink = html => html.replace(/href="#\/(?!m\/|guide\/|sources)([^"]*)"/g,
 const closed = new Set(JSON.parse(localStorage.getItem("mhr_closed") || "[]"));
 function renderChrome(ctx) {
   const inMon = ctx.kind === "mon";
-  $("#topnav").innerHTML = [["怪物图鉴", "#/", ctx.kind === "library"], ["轻弩基础", "#/guide/lbg", ctx.kind === "guide"]]
+  $("#topnav").innerHTML = [["怪物图鉴", "#/", ctx.kind === "library"], ["轻弩基础", "#/guide/lbg", ctx.kind === "guide" && ctx.page !== "anomaly"], ["怪异调查", "#/guide/anomaly", ctx.kind === "guide" && ctx.page === "anomaly"]]
     .map(([t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}">${t}</a>`).join("") +
-    (inMon ? `<button class="mon" id="monChip" aria-haspopup="menu" aria-expanded="false" title="切换怪物"><img src="${M.icon}" alt="">${M.name}<span class="car">▾</span></button>`
-           : `<button class="mon" id="monChip" aria-haspopup="menu" aria-expanded="false"><span>选择怪物</span><span class="car">▾</span></button>`);
+    (inMon ? `<button class="mon" id="monChip" aria-haspopup="menu" aria-expanded="false" title="切换怪物"><img src="${M.icon}" alt="">${M.name}<span class="car"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>`
+           : `<button class="mon" id="monChip" aria-haspopup="menu" aria-expanded="false"><span>选择怪物</span><span class="car"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>`);
   $("#monChip").onclick = e => { e.stopPropagation(); toggleMonMenu(ctx); };
   $("#bnav").innerHTML = inMon ? [["", "速读", "⚡"], ["map", "打哪里", "◎"], ["ammo", "弹药", "▮"], ["phase/0", phaseList().length > 1 ? "阶段" : "招式", "⚔"], ["videos", "视频", "▶"]]
     .map(([r, t, i]) => `<a href="${mLink(r)}" class="${(ctx.r === r || (r === "phase/0" && (ctx.r || "").startsWith("phase/"))) ? "on" : ""}"><span class="i">${i}</span>${t}</a>`).join("") : "";
@@ -182,12 +182,12 @@ function renderChrome(ctx) {
       h += `</div>`;
     }
     h += `<div class="foot">${legend}
-      <div class="gl static">通用</div>${link("#/guide/lbg", "轻弩基础", false)}${link("#/sources", "来源与未验证", false)}
+      <div class="gl static">通用</div>${link("#/guide/lbg", "轻弩基础", false)}${link(`#/guide/anomaly?m=${MON.id}`, "怪异调查计算器", false)}${link("#/sources", "来源与未验证", false)}
       <div class="legend2"><span><span class="kbd">[</span> 上一页　<span class="kbd">]</span> 下一页　<span class="kbd">/</span> 搜索</span></div></div>`;
   } else {
     h += `<div class="gl static">怪物 <span class="cnt">${D.REGISTRY.length}</span></div>` +
       D.REGISTRY.map(m => link(`#/m/${m.id}`, m.name, false, `<img class="mi" src="${m.icon}">`) .replace("</a>", `${m.status === "draft" ? '<span class="badge draft sm">草稿</span>' : ""}</a>`)).join("") +
-      `<div class="gl static">通用</div>${link("#/", "怪物图鉴", ctx.kind === "library")}${link("#/guide/lbg", "轻弩基础", ctx.kind === "guide")}${link("#/sources", "来源与未验证", ctx.kind === "sources")}` +
+      `<div class="gl static">通用</div>${link("#/", "怪物图鉴", ctx.kind === "library")}${link("#/guide/lbg", "轻弩基础", ctx.kind === "guide" && ctx.page !== "anomaly")}${link("#/guide/anomaly", "怪异调查计算器", ctx.kind === "guide" && ctx.page === "anomaly")}${link("#/sources", "来源与未验证", ctx.kind === "sources")}` +
       `<div class="foot">${legend}<div class="legend2"><span><span class="kbd">/</span> 搜索怪物</span></div></div>`;
   }
   $("#side").innerHTML = h;
@@ -757,6 +757,49 @@ function libraryPage() {
   <table class="recent"><tr><th>怪物</th><th>类型</th><th>状态</th><th class="num">更新</th></tr>
   ${all.slice().sort((a, b) => (b.r.updated || "").localeCompare(a.r.updated || "")).map(({ r }) => `<tr><td><a href="#/m/${r.id}">${r.name}</a><div class="note-s">${r.en}</div></td><td>${r.type || "—"}</td><td>${r.status === "draft" ? "草稿" : "完整"}</td><td class="num mono">${r.updated || "—"}</td></tr>`).join("")}</table>`;
 }
+// ---------- 名词解释 ----------
+let glP = null;
+function loadGlossary() {
+  if (D.GLOSSARY_SKILLS) return Promise.resolve();
+  return glP ||= new Promise(ok => { const s = document.createElement("script"); s.src = "data/glossary_skills.js"; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+}
+const TERMS = [
+  ["会心 / 会心率", "Affinity", "打出「会心一击」（暴击）的概率。会心时伤害 ×1.25；负会心（红字）时 ×0.75。"],
+  ["超会心", "Critical Boost", "把会心一击的伤害从 ×1.25 提高到 ×1.30 / 1.35 / 1.40。"],
+  ["弱点 / 肉质", "Hitzone", "部位的软硬（0–100）。子弹看「弹」肉质，≥45 算弱点，「弱点特效」只在弱点上生效。"],
+  ["动作值", "Motion Value", "每种弹自带的伤害倍率，例如 LV3通常弹 34、LV2贯穿弹 每段 7。"],
+  ["会心距离", "Critical Distance", "每种弹有一个伤害最高的距离（准星变亮）。太近或太远伤害会下降。"],
+  ["速射", "Rapid Fire", "轻弩特有：一次扣扳机连射 2–3 发，每发伤害 ×0.7，但只消耗 1 发子弹。"],
+  ["装饰品（珠子）", "Decoration / Jewel", "镶在武器或防具的孔里，增加技能。名字里的【数字】是需要的孔大小；「Ⅱ」是同一技能的 2 级珠，要 4 级孔。"],
+  ["镶嵌槽（孔）", "Slot", "武器 / 防具上的孔，大小 1–4。大孔可以放小珠子，反过来不行。"],
+  ["护石", "Talisman", "额外的饰品：自带 1–2 个技能和几个孔。可以用炼金做。"],
+  ["百龙装饰品", "Rampage Decoration", "只能镶在武器的「百龙孔」里的特殊珠子，给武器专用技能。"],
+  ["怪异炼成", "Qurious Crafting", "曙光后期用怪异素材强化装备：武器加攻击 / 会心，防具可以换技能（俗称「傀异炼成」）。"],
+  ["怪异化 / 怪异克服", "Afflicted / Risen", "被啮生虫感染的强化个体。「怪异克服」是克服了感染、更强的版本（例如怪异克服天彗龙）。"],
+  ["狂龙病 / 狂龙症", "Frenzy", "被天廻龙一类的狂龙病毒感染：自然回复停止；持续打怪物可以克服，克服后会心上升。"],
+  ["噬血", "Bloodblight", "原初爵银龙等给的状态：体力慢慢减少、回复变差，打中怪物可以回血。"],
+];
+function bindGlossary() {
+  const box = $("#glbox"); if (!box) return;
+  const SK = D.GLOSSARY_SKILLS || [];
+  const groups = [...new Set(SK.map(x => x.group))];
+  const q = (S.glq || "").trim().toLowerCase(), g = S.glg || "";
+  const hit = x => !q || [x.n.zh, x.n.tw, x.n.ja, x.n.en, x.desc, ...x.decos.flatMap(d => [d.n.zh, d.n.tw, d.n.ja, d.n.en])].some(t => (t || "").toLowerCase().includes(q));
+  const list = SK.filter(x => (!g || x.group === g) && hit(x));
+  const deco = d => `<span class="deco" title="${esc([d.n.tw, d.n.ja, d.n.en].filter(Boolean).join(" / "))}">${d.icon ? `<img src="assets/items/${d.icon}_${d.color}.png" alt="">` : ""}<b>${esc(d.n.zh)}</b><small>+${d.lv} 级</small></span>`;
+  box.innerHTML = `<div class="ctrls"><input class="glq" id="glq" placeholder="搜索：达人珠 / 看破 / Critical Eye / 見切り" value="${esc(S.glq || "")}" autocomplete="off">
+    <div class="seg" id="glg"><button data-g="" class="${!g ? "on" : ""}" aria-pressed="${!g}">全部 ${SK.length}</button>${groups.map(x => `<button data-g="${x}" class="${g === x ? "on" : ""}" aria-pressed="${g === x}">${x}</button>`).join("")}</div></div>
+    <div class="glist">${list.map(x => `<div class="gl1">
+      <div class="glh"><b>${esc(x.n.zh)}</b><span class="n4"><span><i>繁</i>${esc(x.n.tw || "")}</span><span><i>日</i>${esc(x.n.ja || "")}</span><span><i>EN</i>${esc(x.n.en || "")}</span></span><span class="mx">最高 Lv${x.max}</span></div>
+      <div class="gld">${esc(x.desc)}</div>
+      ${x.decos.length ? `<div class="decos">${x.decos.map(deco).join("")}</div>` : `<div class="note-s">没有对应的装饰品（只能靠防具 / 护石）</div>`}
+      <details class="lv"><summary>每级效果</summary><ol>${x.levels.map(l => `<li>${esc(l)}</li>`).join("")}</ol></details>
+    </div>`).join("") || `<div class="todo">没有找到「${esc(q)}」</div>`}</div>`;
+  const inp = $("#glq");
+  inp.oninput = () => { S.glq = inp.value; const pos = inp.selectionStart; bindGlossary(); const n = $("#glq"); n.focus(); n.setSelectionRange(pos, pos); };
+  box.querySelectorAll("#glg [data-g]").forEach(b => b.onclick = () => { S.glg = b.dataset.g; bindGlossary(); });
+}
+
 function guidePage() {
   const G = [
     ["Wyvern Counter（曙光新增翔虫技）", "用翔虫往后紧急撤退，同时打出后坐力很大的一发。<b>时机对上怪物的攻击</b>时，会变成爆炸反击，连吐息都能抵消。你说的「跳起来用翔虫挡攻击」应该就是它。", "fandomSwitch"],
@@ -764,7 +807,11 @@ function guidePage() {
     ["Fanning Maneuver", "用翔虫向左右快速侧移，同时<b>短时间提高攻击</b>。", "fandomSwitch"],
     ["Critical Firepower（会心射击）", "通常弹 ×1.3、散弹 ×1.2、贯穿弹 ×1.1，但会心距离变窄、后坐力变大。计算器「其他」里可以打开。", "mhrdmg"],
   ];
-  return header("通用知识", "轻弩基础", "跟怪物无关、所有轻弩都用得上的知识。", [`被打飞时按**翔虫受身**，配合方向键**往侧边**躲追击`, `**Wyvern Counter**：翔虫后撤 + 时机对了就反击，可以抵消吐息`, `**狂龙症【蚀】**：被感染时**持续扣血**，但攻击、回避上升；克服后回满红血、会心上升`, `**伏魔耗命**：啮生虫**一直吸血**，换来攻击上升；切换翔虫技（迅速切换）可以回血`]) + `
+  return header("通用知识", "轻弩基础", "跟怪物无关、所有轻弩都用得上的知识。", [`**名词解释**和**配装技能 / 珠子**在下面，可以搜索`, `被打飞时按**翔虫受身**，配合方向键**往侧边**躲追击`, `**Wyvern Counter**：翔虫后撤 + 时机对了就反击，可以抵消吐息`, `**狂龙症【蚀】**：被感染时**持续扣血**，但攻击、回避上升；克服后回满红血、会心上升`, `**伏魔耗命**：啮生虫**一直吸血**，换来攻击上升；切换翔虫技（迅速切换）可以回血`]) + `
+  <h2 class="h" id="terms">名词解释</h2>
+  <div class="terms">${TERMS.map(([t, en, d]) => `<div class="term"><b>${t}</b><small>${en}</small><p>${d}</p></div>`).join("")}</div>
+  <h2 class="h" id="skills">配装常用技能 & 珠子 <span class="muted" style="font:13px var(--sans)">（4 语言 · 来源 MHRice）</span></h2>
+  <div id="glbox"></div>
   <h2 class="h">翔虫技 / 切换技</h2>
   <div class="panel" style="padding:6px 12px"><table class="moves"><tr><th>名字</th><th>做什么</th><th>来源</th></tr>
     ${G.map(([n, d, s]) => `<tr><td class="mv">${n}</td><td>${d}</td><td class="note-s">${srcLink(s)}</td></tr>`).join("")}</table></div>
@@ -802,6 +849,111 @@ function guidePage() {
   </div>
   <div class="panel" style="margin-top:14px"><h3>和「噬血」不一样</h3><p style="margin:0;font-size:14px;color:var(--paper2)">上面两个是<b>你自己装备的技能</b>带来的扣血。「噬血」是<b>原初形态爵银龙打你</b>时附加的状态：自然回复停止、回复变差，打怪物可以回血。</p></div>`;
 }
+// ---------- 怪异调查计算器 ----------
+let anP = null;
+function loadAnomaly() {
+  if (D.ANOMALY) return Promise.resolve(D.ANOMALY);
+  return anP ||= new Promise(ok => { const s = document.createElement("script"); s.src = "data/anomaly.js"; s.onload = () => ok(D.ANOMALY); document.head.appendChild(s); });
+}
+const AN = { m: null, lv: 200, mode: null, pl: 1 };
+const PL_MUL = [1, 1.35, 1.7, 2.0];   // 多人：按普通大师任务的倍率（怪异调查未公开）
+const anRow = (tbl, lv) => { const r = tbl.rows.find(r => lv >= r[0] && lv <= r[1]) || tbl.rows.at(-1); return Object.fromEntries(D.ANOMALY.cols.map((c, i) => [c, r[i]])); };
+function anMon() { const A = D.ANOMALY; return A.monsters.find(m => m.id === AN.m) || A.monsters.find(m => m.id === "em132_05") || A.monsters[0]; }
+function anModes(m) { return [m.affFrom != null && "aff", m.norFrom != null && "nor"].filter(Boolean); }
+function anomalyPage(ctx) {
+  const q = new URLSearchParams(ctx.qs || "");
+  if (q.get("m") && D.ANOMALY.monsters.some(m => m.id === q.get("m"))) AN.m = q.get("m");
+  if (!AN.m) AN.m = (MON && D.ANOMALY.monsters.some(m => m.id === MON.id)) ? MON.id : "em132_05";
+  return header("通用 · Anomaly", "怪异调查计算器", "选怪物和调查等级，算出体力和各种倍率。", [
+    `体力 = **大师基础体力 × 这一级的体力倍率**（单人）`, `怪异调查**没有体力浮动**：同一级每次都一样`, `倍率表来自 MHRice（隐藏页）；多人倍率没有公开，按普通任务**推测**`]) + `<div id="anbox"></div>`;
+}
+function bindAnomaly() {
+  const A = D.ANOMALY, m = anMon(), modes = anModes(m);
+  if (!modes.includes(AN.mode)) AN.mode = modes[0] || "nor";
+  const special = AN.lv === 301, lv = AN.lv;
+  const from = AN.mode === "aff" ? m.affFrom : m.norFrom;
+  const tbl = A.tables[AN.mode][AN.mode === "aff" ? m.aff : m.nor];
+  const r = anRow(tbl, lv), hpSolo = Math.round(m.baseHP * r.hp), hp = Math.round(hpSolo * PL_MUL[AN.pl - 1]);
+  const below = !special && from && lv < from;
+  const reg = new Set(D.REGISTRY.map(x => x.id));
+  const tile = (t, v, s) => `<div class="tile"><div class="t">${t}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const stat = (n, v) => `<span class="anst"><b>×${(+v).toFixed(2).replace(/\.?0+$/, "")}</b>${n}</span>`;
+  // 折线图：两张表的体力随等级变化
+  const series = modes.map(md => ({ md, name: md === "aff" ? "怪异化" : "通常", color: md === "aff" ? "#b8862f" : "#4a8fe0",
+    pts: Array.from({ length: 300 }, (_, i) => [i + 1, Math.round(m.baseHP * anRow(A.tables[md][md === "aff" ? m.aff : m.nor], i + 1).hp)]),
+    from: md === "aff" ? m.affFrom : m.norFrom }));
+  const W = 760, H = 260, L = 56, R = 16, T = 16, B = 30;
+  const ymax = Math.max(...series.flatMap(s => s.pts.map(p => p[1]))) * 1.06, ymin = 0;
+  const X = l => L + (l - 1) / 299 * (W - L - R), Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
+  const ticks = Array.from({ length: 5 }, (_, i) => Math.round(ymax / 4 * i / 1000) * 1000);
+  const svg = `<svg class="anchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="体力随调查等级变化">
+    ${ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" class="gr"/><text x="${L - 8}" y="${Y(t) + 4}" class="ax" text-anchor="end">${(t / 1000).toFixed(0)}k</text>`).join("")}
+    ${[1, 50, 100, 150, 200, 250, 300].map(l => `<text x="${X(l)}" y="${H - 8}" class="ax" text-anchor="middle">Lv${l}</text>`).join("")}
+    ${series.map(s => (s.from ? `<line x1="${X(s.from)}" x2="${X(s.from)}" y1="${T}" y2="${H - B}" class="fromline" stroke="${s.color}"/>` : "") +
+      `<polyline fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" points="${s.pts.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" ")}"/>` +
+      `<text x="${W - R}" y="${Y(s.pts.at(-1)[1]) - 6}" class="dl" text-anchor="end">${s.name}</text>`).join("")}
+    ${!special ? `<line x1="${X(lv)}" x2="${X(lv)}" y1="${T}" y2="${H - B}" class="cur"/>` + series.map(s => `<circle cx="${X(lv)}" cy="${Y(s.pts[lv - 1][1])}" r="5" fill="${s.color}" stroke="#1b1714" stroke-width="2"/>`).join("") : ""}
+    <line id="anx" x1="0" x2="0" y1="${T}" y2="${H - B}" class="hov" visibility="hidden"/>
+    <rect id="anhit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg>`;
+  $("#anbox").innerHTML = `
+  <div class="anctl">
+    <button class="qbtn anmon" id="anMonBtn" aria-haspopup="menu" aria-expanded="false"><img src="${m.icon}" alt=""><b>${esc(m.zh)}</b><span class="note-s">${esc(m.en)}</span>
+      <svg viewBox="0 0 16 16" width="16" height="16"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+    <div class="seg" id="anMode">${["aff", "nor"].map(md => `<button data-md="${md}" class="${AN.mode === md ? "on" : ""}" ${modes.includes(md) ? "" : "disabled"} aria-pressed="${AN.mode === md}">${md === "aff" ? "怪异化" : "通常（非怪异化）"}</button>`).join("")}</div>
+    <div class="seg" id="anPl">${[1, 2, 3, 4].map(n => `<button data-pl="${n}" class="${AN.pl === n ? "on" : ""}" aria-pressed="${AN.pl === n}">${n} 人</button>`).join("")}</div>
+  </div>
+  <div class="anlv">
+    <div class="lvbig"><span class="note-s">调查等级</span><b>${special ? "特殊调查" : "Lv " + lv}</b></div>
+    <input type="range" id="anRange" min="1" max="300" value="${special ? 300 : lv}" aria-label="调查等级">
+    <div class="seg" id="anQuick">${[1, 100, 200, 250, 300].map(l => `<button data-lv="${l}" class="${lv === l ? "on" : ""}" aria-pressed="${lv === l}">Lv${l}</button>`).join("")}<button data-lv="301" class="${special ? "on" : ""}" aria-pressed="${special}">特殊调查</button></div>
+  </div>
+  ${below ? `<div class="todo">⚠ ${esc(m.zh)}的${AN.mode === "aff" ? "怪异化" : "通常"}版本要到 <b>Lv${from}</b> 才会出现${m.norAlt && AN.mode === "nor" ? `（或 Lv${m.norAlt}）` : ""}，下面的数字只是表里的值。</div>` : ""}
+  <div class="tiles">
+    ${tile("体力" + (AN.pl > 1 ? `（${AN.pl} 人）` : ""), `<span class="mono">${hp.toLocaleString()}</span>`, `${m.baseHP} × ${r.hp}${AN.pl > 1 ? ` × ${PL_MUL[AN.pl - 1]}<span class="unv guess">推测</span>` : ""}`)}
+    ${tile("攻击", `<span class="mono">×${r.atk}</span>`, "怪物攻击力倍率")}
+    ${tile("部位耐久", `<span class="mono">×${r.part}</span>`, "破坏 / 硬直要打的量")}
+    ${tile("单人体力", `<span class="mono">${hpSolo.toLocaleString()}</span>`, `${AN.mode === "aff" ? "怪异化" : "通常"}表 ${AN.mode === "aff" ? m.aff : m.nor}${m.risen ? " · 怪异克服" : ""}`)}
+  </div>
+  <div class="anstats"><span class="note-s">异常耐性倍率（越高越难上异常）</span>${stat("麻痹", r.paralyze)}${stat("睡眠", r.sleep)}${stat("眩晕", r.stun)}${stat("减气", r.exhaust)}${stat("属性异常", r.elementA)}${stat("骑乘", r.ride)}</div>
+  <div class="panel" style="margin-top:16px"><h3>体力随等级变化 <span class="note-s" style="font-family:var(--sans);font-weight:400">虚线 = 从这一级开始出现 · 鼠标移上去看每一级</span></h3>
+    ${series.length > 1 ? `<div class="legend3">${series.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join("")}</div>` : ""}
+    <div class="anwrap">${svg}<div class="antip" id="antip" hidden></div></div></div>
+  <details class="more"><summary>${AN.mode === "aff" ? "怪异化" : "通常"}表 · 每个等级档位</summary>
+    <table class="hzt antbl"><tr><th>等级</th><th>体力</th><th>体力倍率</th><th>攻击</th><th>部位</th><th>麻痹</th><th>睡眠</th><th>眩晕</th></tr>
+    ${tbl.rows.filter((r0, i, a) => tbl.rows.length < 40 || i % 10 === 0 || i === a.length - 1).map(r0 => `<tr><td>${r0[0] === 301 ? "特殊调查" : r0[0] === r0[1] ? "Lv" + r0[0] : `Lv${r0[0]}–${r0[1]}`}</td><td class="num">${Math.round(m.baseHP * r0[2]).toLocaleString()}</td><td class="num">×${r0[2]}</td><td class="num">×${r0[3]}</td><td class="num">×${r0[4]}</td><td class="num">×${r0[7]}</td><td class="num">×${r0[8]}</td><td class="num">×${r0[5]}</td></tr>`).join("")}</table>
+    <div class="note-s">${tbl.rows.length >= 40 ? "怪异化表几乎每一级都变，这里每 10 档显示一行。" : ""}来源：<a href="${tbl.src}" target="_blank">MHRice</a></div></details>
+  <p class="note-s" style="margin-top:10px">${reg.has(m.id) ? `<a href="#/m/${m.id}">打开 ${esc(m.zh)} 的攻略 →</a>　` : ""}${A.note}</p>`;
+  // 交互
+  $("#anMonBtn").onclick = e => { e.stopPropagation(); toggleAnMenu(); };
+  $("#anbox").querySelectorAll("#anMode [data-md]").forEach(b => b.onclick = () => { AN.mode = b.dataset.md; bindAnomaly(); });
+  $("#anbox").querySelectorAll("#anPl [data-pl]").forEach(b => b.onclick = () => { AN.pl = +b.dataset.pl; bindAnomaly(); });
+  $("#anbox").querySelectorAll("#anQuick [data-lv]").forEach(b => b.onclick = () => { AN.lv = +b.dataset.lv; bindAnomaly(); });
+  $("#anRange").oninput = e => { AN.lv = +e.target.value; bindAnomaly(); $("#anRange").focus(); };
+  const svgEl = $("#anbox .anchart"), tip = $("#antip"), hx = $("#anx");
+  $("#anhit").onmousemove = e => {
+    const b = svgEl.getBoundingClientRect(), x = (e.clientX - b.left) / b.width * W;
+    const l = Math.max(1, Math.min(300, Math.round((x - L) / (W - L - R) * 299 + 1)));
+    hx.setAttribute("x1", X(l)); hx.setAttribute("x2", X(l)); hx.setAttribute("visibility", "visible");
+    tip.hidden = false; tip.style.left = Math.min(b.width - 160, (X(l) / W) * b.width + 10) + "px";
+    tip.innerHTML = `<b>Lv${l}</b>` + series.map(s => `<div><i style="background:${s.color}"></i>${s.name} <span class="mono">${s.pts[l - 1][1].toLocaleString()}</span></div>`).join("");
+  };
+  $("#anhit").onmouseleave = () => { tip.hidden = true; hx.setAttribute("visibility", "hidden"); };
+  $("#anhit").onclick = e => { const b = svgEl.getBoundingClientRect(), x = (e.clientX - b.left) / b.width * W; AN.lv = Math.max(1, Math.min(300, Math.round((x - L) / (W - L - R) * 299 + 1))); bindAnomaly(); };
+}
+function toggleAnMenu(force) {
+  const menu = $("#questMenu"), btn = $("#anMonBtn"), open = force ?? menu.hidden;
+  if (!open) { menu.hidden = true; return; }
+  const reg = new Set(D.REGISTRY.map(x => x.id)), A = D.ANOMALY;
+  const list = A.monsters.slice().sort((a, b) => reg.has(b.id) - reg.has(a.id));
+  menu.innerHTML = `<div class="mh">选择怪物 · ${list.length} 只（有攻略的在前）</div><input class="anq" id="anQ" placeholder="搜索（中 / 日 / 英）" autocomplete="off">
+    <div class="anlist">${list.map(x => `<a href="#" data-m="${x.id}" class="${x.id === AN.m ? "cur" : ""}" data-s="${esc((x.zh + x.ja + x.en).toLowerCase())}"><img src="${x.icon}" alt=""><span><b>${esc(x.zh)}</b><small>${esc(x.en)}${reg.has(x.id) ? " · 有攻略" : ""}</small></span>${x.id === AN.m ? '<span class="ck">✓</span>' : ""}</a>`).join("")}</div>`;
+  const b = btn.getBoundingClientRect();
+  menu.style.left = Math.max(8, b.left) + "px"; menu.style.top = (b.bottom + 6) + "px"; menu.hidden = false;
+  menu.querySelectorAll("[data-m]").forEach(a => a.onclick = e => { e.preventDefault(); AN.m = a.dataset.m; menu.hidden = true; history.replaceState(null, "", "#/guide/anomaly?m=" + AN.m); bindAnomaly(); });
+  const qi = $("#anQ"); qi.focus(); qi.oninput = () => { const v = qi.value.trim().toLowerCase(); menu.querySelectorAll("[data-m]").forEach(a => a.style.display = !v || a.dataset.s.includes(v) ? "" : "none"); };
+  qi.onclick = e => e.stopPropagation();
+}
+
 function sourcesPage() {
   const mons = D.REGISTRY.map(r => D.monsters[r.id]).filter(Boolean);
   return header("Info", "来源与未验证", "图标、截图来自游戏数据站和官方素材，版权归 CAPCOM 所有。本页只作个人攻略参考。") + `
@@ -834,9 +986,11 @@ async function render(scrollTop = true, fromHash = false) {
     if (r === "map") syncHash("map");
     document.title = `${M.name} · ${(ORDER.find(o => o.r === r) || {}).t || ""} · 猎人手记`;
   } else {
-    html = ctx.kind === "guide" ? guidePage() : ctx.kind === "sources" ? sourcesPage() : libraryPage();
+    if (ctx.kind === "guide" && ctx.page === "anomaly") { await loadAnomaly(); html = anomalyPage(ctx); bind = bindAnomaly; }
+    else if (ctx.kind === "guide") { await loadGlossary(); html = guidePage(); bind = bindGlossary; }
+    else html = ctx.kind === "sources" ? sourcesPage() : libraryPage();
     $("#main").innerHTML = html;
-    document.title = (ctx.kind === "guide" ? "轻弩基础" : ctx.kind === "sources" ? "来源" : "怪物图鉴") + " · 猎人手记";
+    document.title = (ctx.kind === "guide" ? (ctx.page === "anomaly" ? "怪异调查计算器" : "轻弩基础") : ctx.kind === "sources" ? "来源" : "怪物图鉴") + " · 猎人手记";
   }
   bind && bind();
   document.querySelectorAll('[data-act="quest"]').forEach(a => a.onclick = e => { e.preventDefault(); e.stopPropagation(); toggleQuestMenu(a, true); });

@@ -365,6 +365,50 @@ table.hzt td.hzcell.cur{outline:2px solid var(--gold2);outline-offset:-2px;opaci
 .stp .lv{min-width:34px;text-align:center;font:700 15px var(--mono);color:var(--paper)}
 .stp .lv small{font-size:10.5px;color:var(--paper3);font-weight:400}
 .calc .f input[type=number]{width:104px;height:30px;text-align:center}
+/* 名词解释 */
+.terms{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.term{background:var(--ink2);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:3px;padding:10px 12px}
+.term b{font:700 15px var(--serif)} .term small{margin-left:8px;color:var(--paper3);font-size:11.5px}
+.term p{margin:4px 0 0;font-size:13.5px;color:var(--paper2);line-height:1.65}
+.glq{flex:1;min-width:240px;background:var(--ink);border:1px solid var(--line2);color:var(--paper);border-radius:3px;padding:8px 10px;font:14px var(--sans)}
+.glq:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+.glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:10px}
+.gl1{background:var(--ink2);border:1px solid var(--line);border-radius:3px;padding:10px 12px}
+.glh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.glh b{font:700 16px var(--serif)} .glh .n4{margin:0} .glh .mx{margin-left:auto;font:12px var(--mono);color:var(--paper3)}
+.gld{font-size:13.5px;color:var(--paper2);margin:4px 0 6px}
+.decos{display:flex;flex-wrap:wrap;gap:6px}
+.deco{display:inline-flex;align-items:center;gap:5px;background:var(--ink);border:1px solid var(--line2);border-radius:3px;padding:2px 8px 2px 4px;font-size:13px}
+.deco img{width:22px;height:22px} .deco b{color:var(--gold2);font-weight:600} .deco small{color:var(--paper3);font-size:11px}
+details.lv{margin-top:6px} details.lv summary{cursor:pointer;font-size:12.5px;color:var(--paper3)}
+details.lv ol{margin:4px 0 0;padding-left:22px;font-size:13px;color:var(--paper2)}
+@media (max-width:760px){ .glist{grid-template-columns:1fr} }
+/* 怪异调查计算器 */
+.anctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.qbtn.anmon{padding:8px 12px}
+.qbtn.anmon img{width:34px;height:34px}
+.qbtn.anmon b{font:700 16px var(--serif)}
+.anlv{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--ink2);border:1px solid var(--line);border-radius:3px;padding:12px 16px;margin-bottom:16px}
+.lvbig{display:flex;flex-direction:column;min-width:120px}
+.lvbig b{font:700 28px var(--mono);color:var(--gold2)}
+#anRange{flex:1;min-width:200px;accent-color:var(--gold)}
+.anstats{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:4px}
+.anst{font-size:13px;color:var(--paper2)} .anst b{font:700 15px var(--mono);color:var(--paper);margin-right:4px}
+.anwrap{position:relative}
+.anchart{width:100%;height:auto;display:block}
+.anchart .gr{stroke:var(--line);stroke-width:1}
+.anchart .ax{fill:var(--paper3);font:11px var(--mono)}
+.anchart .dl{fill:var(--paper2);font:600 12px var(--sans)}
+.anchart .cur{stroke:var(--paper2);stroke-width:1;stroke-dasharray:2 3}
+.anchart .hov{stroke:var(--paper3);stroke-width:1}
+.anchart .fromline{stroke-width:1.2;stroke-dasharray:4 4;opacity:.7}
+#anhit{cursor:crosshair}
+.antip{position:absolute;top:8px;background:var(--ink);border:1px solid var(--line2);border-radius:3px;padding:6px 10px;font-size:12.5px;pointer-events:none;min-width:140px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.antip i,.legend3 i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.legend3{display:flex;gap:16px;font-size:12.5px;color:var(--paper2);margin:2px 0 6px}
+.anq{width:calc(100% - 8px);margin:2px 4px 6px;background:var(--ink);border:1px solid var(--line2);color:var(--paper);border-radius:3px;padding:6px 8px;font:13px var(--sans)}
+.anlist{max-height:60vh;overflow:auto}
+table.antbl td{text-align:right;font:13px var(--mono)} table.antbl td:first-child{text-align:left;font-family:var(--sans)}
 /* 素材掉落 */
 table.rwt td{vertical-align:middle;font-size:13.5px}
 table.rwt td:first-child{width:40px}
@@ -480,7 +524,7 @@ table.recent td a{color:var(--paper);font-weight:600}
 .qbtn .ql{font:600 10.5px var(--mono);letter-spacing:.12em;color:var(--paper3)}
 .qbtn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qbtn .hp{font:600 12.5px var(--mono);color:var(--gold2);white-space:nowrap}
-.qbtn svg,.qmenu svg{flex:none;color:var(--paper3)}
+.qbtn svg,.qmenu svg{flex:none;color:var(--gold);width:16px;height:16px}
 .qmenu{min-width:340px}
 .qmenu a .qn{display:flex;align-items:center;gap:8px;font:600 14px var(--sans)}
 .qmenu a .qs{display:block;font:12px var(--mono);color:var(--paper3);margin-top:2px}
@@ -491,7 +535,9 @@ table.recent td a{color:var(--paper);font-weight:600}
 .top nav button.mon{display:inline-flex;align-items:center;gap:7px;background:var(--ink3);border:1px solid var(--line);color:var(--gold2);font:600 14px var(--sans);padding:6px 10px;border-radius:3px;cursor:pointer}
 .top nav button.mon:hover,.top nav button.mon[aria-expanded="true"]{border-color:var(--gold)}
 .top nav button.mon img{width:22px;height:22px}
-.top nav button.mon .car{color:var(--paper3);font-size:10px;margin-left:2px}
+.top nav button.mon .car{display:inline-grid;place-items:center;color:var(--gold);margin-left:4px}
+.top nav button.mon[aria-expanded="true"] .car svg{transform:rotate(180deg)}
+.top nav button.mon .car svg{transition:transform .15s}
 .monmenu{position:fixed;z-index:50;min-width:300px;background:var(--ink2);border:1px solid var(--line2);border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.6);padding:6px}
 .monmenu .mh{font:600 11px var(--mono);letter-spacing:.14em;color:var(--paper3);padding:6px 8px}
 .monmenu a{display:flex;align-items:center;gap:10px;padding:8px;border-radius:3px;color:var(--paper);text-decoration:none}

@@ -33,6 +33,13 @@ python3 -I tools/equip_assets.py <id> [<普通版id>]   # 合成稀有度颜色�
 ```
 - 有「普通版 / 变种」容易搞混的，在 bundle 里加 `relatedEquip: [{ id, label, icon, note }]`，页面会多一个「⚠ 别搞混」标签
 
+## 3.6 素材掉落 / 怪异调查（自动）
+```bash
+python3 -I tools/fetch_rewards.py <id>      # 部位破坏、剥取、目标报酬… 的概率 → data/rewards/<id>.js
+python3 -I tools/build_anomaly.py           # 怪异调查计算器（全部 73 只怪物，一般不用重跑）
+python3 -I tools/fetch_skills.py            # 轻弩基础页的技能 / 珠子名词解释（一般不用重跑）
+```
+
 ## 4. 完成
 - bundle 和 `index.js` 里都改成 `status: "full"`，`updated` 写日期
 - `node test/calc.test.mjs`
