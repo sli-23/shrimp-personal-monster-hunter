@@ -105,4 +105,5 @@ def main():
         open(os.path.join(ROOT, "data", "rewards", eid + ".js"), "w").write(js)
         print(eid, {k: [(g["part"] or {}).get("zh", (g["part"] or {}).get("en")) if g["part"] else "-" for g in v] for k, v in r.items()})
 
-main()
+if __name__ == "__main__":
+    main()

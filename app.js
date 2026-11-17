@@ -7,6 +7,7 @@ const { AMMO, SKILLS, WEAPONS } = D;
 const $ = s => document.querySelector(s);
 const fmt = (x, d = 1) => (Math.round(x * 10 ** d) / 10 ** d).toLocaleString("zh-CN", { minimumFractionDigits: d, maximumFractionDigits: d });
 const md = t => String(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+const CHEV = `<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 6 L8 10.5 L12.5 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const IMG = { n1:"normal",n2:"normal",n3:"normal",p1:"pierce",p2:"pierce",p3:"pierce",s1:"spread",s2:"spread",s3:"spread",
@@ -761,7 +762,8 @@ function libraryPage() {
 let glP = null;
 function loadGlossary() {
   if (D.GLOSSARY_SKILLS) return Promise.resolve();
-  return glP ||= new Promise(ok => { const s = document.createElement("script"); s.src = "data/glossary_skills.js"; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+  const one = src => new Promise(ok => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
+  return glP ||= Promise.all([one("data/glossary_skills.js"), one("data/deco_recipes.js")]);
 }
 const TERMS = [
   ["会心 / 会心率", "Affinity", "打出「会心一击」（暴击）的概率。会心时伤害 ×1.25；负会心（红字）时 ×0.75。"],
@@ -786,18 +788,47 @@ function bindGlossary() {
   const q = (S.glq || "").trim().toLowerCase(), g = S.glg || "";
   const hit = x => !q || [x.n.zh, x.n.tw, x.n.ja, x.n.en, x.desc, ...x.decos.flatMap(d => [d.n.zh, d.n.tw, d.n.ja, d.n.en])].some(t => (t || "").toLowerCase().includes(q));
   const list = SK.filter(x => (!g || x.group === g) && hit(x));
-  const deco = d => `<span class="deco" title="${esc([d.n.tw, d.n.ja, d.n.en].filter(Boolean).join(" / "))}">${d.icon ? `<img src="assets/items/${d.icon}_${d.color}.png" alt="">` : ""}<b>${esc(d.n.zh)}</b><small>+${d.lv} 级</small></span>`;
+  const RC = D.DECO_RECIPES || {}, open = S.glOpen;
+  const deco = d => { const has = !!RC[d.n.en], on = open === d.n.en;
+    return `<button class="deco${on ? " on" : ""}"${has ? ` data-deco="${esc(d.n.en)}" aria-expanded="${on}"` : " disabled"} title="${esc([d.n.tw, d.n.ja, d.n.en].filter(Boolean).join(" / "))}">${d.icon ? `<img src="assets/items/${d.icon}_${d.color}.png" alt="">` : ""}<b>${esc(d.n.zh)}</b><small>+${d.lv} 级</small>${has ? `<span class="dk">${on ? "收起配方" : "配方"}${CHEV}</span>` : ""}</button>`; };
+  const recipe = x => { const d = x.decos.find(d => d.n.en === open); return d && RC[open] ? recipeHtml(d, RC[open]) : ""; };
   box.innerHTML = `<div class="ctrls"><input class="glq" id="glq" placeholder="搜索：达人珠 / 看破 / Critical Eye / 見切り" value="${esc(S.glq || "")}" autocomplete="off">
     <div class="seg" id="glg"><button data-g="" class="${!g ? "on" : ""}" aria-pressed="${!g}">全部 ${SK.length}</button>${groups.map(x => `<button data-g="${x}" class="${g === x ? "on" : ""}" aria-pressed="${g === x}">${x}</button>`).join("")}</div></div>
     <div class="glist">${list.map(x => `<div class="gl1">
       <div class="glh"><b>${esc(x.n.zh)}</b><span class="n4"><span><i>繁</i>${esc(x.n.tw || "")}</span><span><i>日</i>${esc(x.n.ja || "")}</span><span><i>EN</i>${esc(x.n.en || "")}</span></span><span class="mx">最高 Lv${x.max}</span></div>
       <div class="gld">${esc(x.desc)}</div>
-      ${x.decos.length ? `<div class="decos">${x.decos.map(deco).join("")}</div>` : `<div class="note-s">没有对应的装饰品（只能靠防具 / 护石）</div>`}
+      ${x.decos.length ? `<div class="decos">${x.decos.map(deco).join("")}</div>${recipe(x)}` : `<div class="note-s">没有对应的装饰品（只能靠防具 / 护石）</div>`}
       <details class="lv"><summary>每级效果</summary><ol>${x.levels.map(l => `<li>${esc(l)}</li>`).join("")}</ol></details>
     </div>`).join("") || `<div class="todo">没有找到「${esc(q)}」</div>`}</div>`;
   const inp = $("#glq");
   inp.oninput = () => { S.glq = inp.value; const pos = inp.selectionStart; bindGlossary(); const n = $("#glq"); n.focus(); n.setSelectionRange(pos, pos); };
   box.querySelectorAll("#glg [data-g]").forEach(b => b.onclick = () => { S.glg = b.dataset.g; bindGlossary(); });
+  box.querySelectorAll("[data-deco]").forEach(b => b.onclick = () => {
+    S.glOpen = S.glOpen === b.dataset.deco ? null : b.dataset.deco; const y = b.getBoundingClientRect().top;
+    bindGlossary(); const n = box.querySelector(`[data-deco="${CSS.escape(b.dataset.deco)}"]`); if (n) window.scrollBy(0, n.getBoundingClientRect().top - y);
+  });
+}
+// 珠子配方：费用 / 关键怪物 / 每种素材去哪拿（tools/fetch_deco_recipes.py）
+function recipeHtml(d, r) {
+  const M = D.DECO_MATS || {}, reg = new Set(D.REGISTRY.map(x => x.id));
+  const mon = m => { const ic = `<img class="rmi" src="assets/monsters/${m.id}/icon.png" alt="" onerror="this.remove()">`;
+    return reg.has(m.id) ? `<a class="rmon" href="#/m/${m.id}/drops">${ic}${esc(m.zh || m.en)}</a>` : `<span class="rmon">${ic}${esc(m.zh || m.en)}</span>`; };
+  const src = m => {
+    const rows = [];
+    if (m.mons.length > 8) rows.push(`<div class="rs"><span class="rk">怪物</span>${m.mons.length} 只大师怪物都会掉，常见于怪异调查报酬。例如 ${m.mons.slice(0, 4).map(mon).join("")}</div>`);
+    else m.mons.forEach(x => rows.push(`<div class="rs">${mon(x)}<span class="rb">${(x.best || []).map(b => `<span class="rp"><i>${esc(b.kind)}${b.part ? "·" + esc(b.part) : ""}</i><b class="${b.p >= 20 ? "hi" : b.p <= 5 ? "lo" : ""}">${b.p}%</b></span>`).join("") || `<span class="note-s">只在它的任务报酬里（不靠剥取 / 部位破坏）</span>`}</span></div>`));
+    if (m.maps && m.maps.length) rows.push(`<div class="rs"><span class="rk">采集</span>${m.maps.map(esc).join(" / ")}</div>`);
+    if (m.quests) rows.push(`<div class="rs"><span class="rk">任务</span>${m.quests} 个任务的报酬里有</div>`);
+    if (m.other && m.other.length) rows.push(`<div class="rs"><span class="rk">其他</span>${m.other.map(esc).join(" / ")}</div>`);
+    return rows.join("") || `<div class="rs note-s">MHRice 没列出来源（多半是小型怪物剥取）</div>`;
+  };
+  return `<div class="recipe">
+    <div class="rh"><b>${esc(d.n.zh)}</b> 的配方 <span class="rc mono">${r.cost.toLocaleString()} z</span>
+      ${r.key ? `<span class="rkey">先讨伐 ${mon(r.key)} 解锁</span>` : ""}${r.unlock ? `<span class="rkey">${esc(r.unlock.replace(/^MR/, "大师 ").replace(/^Hub/, "集会所 "))}</span>` : ""}</div>
+    ${r.mats.map(x => { const m = M[x.href]; if (!m) return "";
+      return `<div class="rm"><div class="rn"><img src="assets/items/${m.icon}_${m.color}.png" alt=""><span class="rq mono">${x.qty}×</span><b title="${esc([m.n.tw, m.n.ja, m.n.en].filter(Boolean).join(" / "))}">${esc(m.n.zh)}</b><small>${esc(m.n.en || "")}</small></div>${src(m)}</div>`; }).join("")}
+    <div class="note-s">概率 = 这只怪大师等级里这种拿法的最高单格概率（MHRice）。点有攻略的怪物 → 看它的完整掉落表。</div>
+  </div>`;
 }
 
 function guidePage() {

@@ -38,6 +38,7 @@ python3 -I tools/equip_assets.py <id> [<普通版id>]   # 合成稀有度颜色�
 python3 -I tools/fetch_rewards.py <id>      # 部位破坏、剥取、目标报酬… 的概率 → data/rewards/<id>.js
 python3 -I tools/build_anomaly.py           # 怪异调查计算器（全部 73 只怪物，一般不用重跑）
 python3 -I tools/fetch_skills.py            # 轻弩基础页的技能 / 珠子名词解释（一般不用重跑）
+python3 -I tools/fetch_deco_recipes.py      # 珠子配方 + 每种素材去哪拿（在 fetch_skills 之后跑）
 ```
 
 ## 4. 完成
