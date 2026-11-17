@@ -31,14 +31,29 @@ def hz_row(cells):
     sl, im, sh, fi, wa, ic, th, dr, st = v
     return {"sever": sl, "blunt": im, "shot": sh, "fire": fi, "water": wa, "thunder": th, "ice": ic, "dragon": dr, "stun": st}
 
-def parse_hitzones(page):
+PHASE_ZH = {"Normal": "通常", "Dragon energy": "龙气活性", "Enraged": "愤怒", "Dragon energy & enraged": "龙气活性 + 愤怒"}
+def parse_hitzones(page, phase_names=None):
     rows = P.tables(P.section(page, "s-hitzone"))[0][1:]
     parts, cur = [], None
+    internal = dict(re.findall(r'\[(\d+)\]<span class="mh-hitzone-internal" lang="ja">([^<]+)</span>', P.section(page, "s-hitzone")))
+    if phase_names is not None:   # MHRice 有时用名字（Normal / Enraged …）标阶段
+        for r in rows:
+            t = (r[1]["text"] if r and r[0]["text"].startswith("[") else (r[0]["text"] if r else "")).strip()
+            if not t or t in phase_names: 
+                if t in phase_names and phase_names.index(t) == 0 and phase_names: break
+                continue
+            phase_names.append(t)
     for r in rows:
         if r and r[0]["text"].startswith("["):      # 新部位：[idx] 阶段 名称 9 个数值
             nm = r[2]
-            if not (nm["en"] or nm["zh"]): cur = None; continue   # 无效部位
-            cur = {"en": nm["en"] or "", "name": nm["zh"] or nm["en"], "hz": [hz_row(r[3:12])]}
+            idx = re.match(r"\[(\d+)\]", r[0]["text"]).group(1)
+            if not (nm["en"] or nm["zh"]):
+                vals = [num(c["text"]) for c in r[3:12]]
+                if not any(vals): cur = None; continue   # 全 0 = 无效部位
+                # 没有显示名但有数值（如天彗龙吸气时的胸部）：用内部名
+                inner = internal.get(idx, f"部位{idx}").split("：")[-1].replace("_肉質", "")
+                nm = {"en": f"Part {idx} ({inner})", "zh": f"{inner}（内部名，待改名）"}
+            cur = {"en": nm["en"] or "", "name": nm["zh"] or nm["en"], "hz": [hz_row(r[3:12])], "internal": internal.get(idx)}
             parts.append(cur)
         elif cur is not None and len(r) >= 10:        # 同一部位的下一个阶段：阶段 (空名) 9 个数值
             cur["hz"].append(hz_row(r[-9:]))
@@ -88,7 +103,7 @@ def parse_quests(page):
     if not t: return []
     head = [c["text"] for c in t[0][0]]
     col = {h: i for i, h in enumerate(head)}
-    out = []
+    out, seen = [], set()
     for r in t[0][1:]:
         if len(r) < len(head): continue
         q = r[0]
@@ -97,6 +112,9 @@ def parse_quests(page):
         nm = re.sub(r"^(MR\d+|HR\d+|LR\d+)", "", nm).replace("Target", "").replace("High level", "").replace("Event", "").strip()
         if not (rank and rank.group(1).startswith("MR")): continue   # 只要大师等级
         first = lambda i: num(r[i]["text"].split("/")[0], 1)
+        key = (nm, first(col["HP"]))
+        if key in seen: continue
+        seen.add(key)
         out.append({"id": f"q{len(out)}", "name": f"{rank.group(1).replace('MR', 'MR')}★ {nm}", "hpMul": first(col["HP"]),
                     "atkMul": first(col["Attack"]), "partMul": first(col["Parts"]), "defMul": first(col["Defense"]),
                     "statusMul": {"stun": first(col["Stun"]), "paralysis": first(col["Paralyze"]), "sleep": first(col["Sleep"])},
@@ -110,20 +128,28 @@ def weakness(parts):
     star = lambda v: 3 if v >= 15 else 2 if v >= 10 else 1 if v >= 5 else 0
     return sorted([{"el": e, "name": n, "stars": star(avg[e]), "avgHz": round(avg[e], 1), "computed": True} for e, n in els], key=lambda w: -w["avgHz"])
 
+def phase_label(pnames, i):
+    nm = pnames[i] if i < len(pnames) and not pnames[i].isdigit() else None
+    if nm:   # 名字来自 MHRice：不用标推测
+        zh = PHASE_ZH.get(nm, nm)
+        return {"name": zh, "short": zh.replace("龙气活性 + 愤怒", "龙气+怒")[:5], "en": nm, "guess": False}
+    return {"name": "通常" if i == 0 else f"阶段 {i}", "short": "通常" if i == 0 else f"阶段{i}", "guess": i > 0}
+
 def fetch(mid):
     page = get(f"{BASE}/monster/{mid}.html")
     nm = P.names(page)
     basic = P.text(P.section(page, "s-basic"))
     hp = re.search(r"Base HP \(LR/HR\) (\d+), \(MR\) (\d+)", basic)
     desc = P.text(P.section(page, "s-description"))
-    parts = parse_hitzones(page)
+    pnames = []
+    parts = parse_hitzones(page, pnames)
     nphase = max(len(p["hz"]) for p in parts)
     for p in parts:   # 阶段数不足的部位补齐
         while len(p["hz"]) < nphase: p["hz"].append(dict(p["hz"][-1]))
     return {
         "id": "em" + mid, "mhrice": mid, "name": nm["zh"], "nameAlt": f"{nm['en']} · {nm['ja']}", "en": nm["en"], "ja": nm["ja"],
         "icon": f"assets/monsters/em{mid}/icon.png", "baseHP": int(hp.group(2)) if hp else None,
-        "states": [{"id": i, "name": "通常" if i == 0 else f"阶段 {i}", "short": "通常" if i == 0 else f"阶段{i}", "guess": i > 0,
+        "states": [{"id": i, **phase_label(pnames, i),
                     "color": ["#c9c2b4", "#c2414b", "#e0612f", "#8f1d2c", "#7a5ab8", "#4a8fb8"][i % 6], "desc": "待补充"} for i in range(nphase)],
         "parts": [{"id": p["id"], "name": p["name"], "en": p["en"], "hz": p["hz"], "stagger": None, "brk": None, "note": ""} for p in parts],
         "partsRaw": parse_parts(page),

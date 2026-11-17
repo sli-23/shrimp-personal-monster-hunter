@@ -587,15 +587,31 @@ async function bindEquip() {
   if (S.eqFor !== id) { S.eqFor = id; S.eqTab = eq.weapons.length ? "w" : "a"; S.eqType = null; }   // 没有武器的怪物默认打开防具
   const types = TYPE_ORDER.filter(t => eq.weapons.some(w => w.type === t));
   if (S.eqType && !types.includes(S.eqType)) S.eqType = null;
-  const ws = eq.weapons.filter(w => !S.eqType || w.type === S.eqType).sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || b.rar - a.rar);
+  // 自己的武器 vs 用它素材强化的别家武器（比如钢龙、炎王龙的最终强化要用天彗龙素材）
+  const stem = (M.name.match(/[一-鿿]{2}龙$/) || [""])[0];
+  const counts = {}; eq.weapons.forEach(w => { const k = (w.series && w.series.zh) || ""; counts[k] = (counts[k] || 0) + 1; });
+  const own = MON.ownSeries || Object.keys(counts).filter(k => stem && k.includes(stem)).concat(Object.keys(counts).length === 1 ? Object.keys(counts) : []);
+  const isOwn = w => !Object.keys(counts).length || own.includes((w.series && w.series.zh) || "") || own.length === 0;
+  const sortW = arr => arr.sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || b.rar - a.rar);
+  const filt = eq.weapons.filter(w => !S.eqType || w.type === S.eqType);
+  const ws = sortW(filt.filter(isOwn)), others = sortW(filt.filter(w => !isOwn(w)));
   const relCount = rel.reduce((n, r) => n + r.eq.weapons.length + r.eq.armor.length, 0);
-  const key = [`武器 **${eq.weapons.length}** 件 · 防具 **${eq.armor.length}** 套`, `轻弩、重弩排在最前面`];
+  const ownN = eq.weapons.filter(isOwn).length, otherN = eq.weapons.length - ownN;
+  const key = [`它自己的武器 **${ownN}** 件${otherN ? `（另有 ${otherN} 件别家武器要用它的素材强化）` : ""} · 防具 **${eq.armor.length}** 套`, `轻弩、重弩排在最前面`];
   if (rel.length) key.push(`⚠ 容易搞混：${rel.map(r => `**${r.label}**`).join("、")}的装备放在「别搞混」里`);
   if (!eq.weapons.length) key.splice(1, 1, `**这只怪物没有武器**（只有防具）`);
-  const tabs = `<div class="seg" id="eqTabs"><button data-t="w" class="${S.eqTab === "w" ? "on" : ""}" aria-pressed="${S.eqTab === "w"}">武器 ${eq.weapons.length}</button><button data-t="a" class="${S.eqTab === "a" ? "on" : ""}" aria-pressed="${S.eqTab === "a"}">防具 ${eq.armor.length}</button>${rel.length ? `<button data-t="r" class="${S.eqTab === "r" ? "on" : ""}" aria-pressed="${S.eqTab === "r"}">⚠ 别搞混 ${relCount}</button>` : ""}</div>`;
+  const tabs = `<div class="seg" id="eqTabs"><button data-t="w" class="${S.eqTab === "w" ? "on" : ""}" aria-pressed="${S.eqTab === "w"}">武器 ${ownN}${otherN ? `<small style="opacity:.7"> +${otherN}</small>` : ""}</button><button data-t="a" class="${S.eqTab === "a" ? "on" : ""}" aria-pressed="${S.eqTab === "a"}">防具 ${eq.armor.length}</button>${rel.length ? `<button data-t="r" class="${S.eqTab === "r" ? "on" : ""}" aria-pressed="${S.eqTab === "r"}">⚠ 别搞混 ${relCount}</button>` : ""}</div>`;
   const chips = S.eqTab === "w" && types.length > 1 ? `<div class="seg" id="eqTypes"><button data-ty="" class="${!S.eqType ? "on" : ""}" aria-pressed="${!S.eqType}">全部</button>${types.map(t => `<button data-ty="${t}" class="${S.eqType === t ? "on" : ""}" aria-pressed="${S.eqType === t}">${eq.weapons.find(w => w.type === t).typeZh}</button>`).join("")}</div>` : "";
   let body = "";
-  if (S.eqTab === "w") body = ws.length ? `<div class="eqs">${ws.map(weaponCard).join("")}</div>` : `<div class="todo">这只怪物没有可以制作的武器。${rel.length ? "名字相近的武器在「⚠ 别搞混」里。" : ""}</div>`;
+  if (S.eqTab === "w") {
+    body = ws.length ? `<div class="eqs">${ws.map(weaponCard).join("")}</div>` : (others.length ? "" : `<div class="todo">这只怪物没有可以制作的武器。${rel.length ? "名字相近的武器在「⚠ 别搞混」里。" : ""}</div>`);
+    if (others.length) {
+      const grp = {}; others.forEach(w => { const k = (w.series && w.series.zh) || "其他"; (grp[k] ||= []).push(w); });
+      body += `<details class="more otherw"${ws.length ? "" : " open"}><summary>用它的素材强化的<b>其他怪物的武器</b>（${others.length} 件：${Object.entries(grp).map(([k, v]) => `${k} ${v.length}`).join("、")}）</summary>
+        <div class="note-s" style="margin:6px 0 10px">这些不是它的武器：是别的怪物的武器线，<b>最后一步强化</b>需要${M.name}的素材。</div>
+        <div class="eqs">${others.map(weaponCard).join("")}</div></details>`;
+    }
+  }
   else if (S.eqTab === "a") body = eq.armor.length ? `<div class="eqs">${eq.armor.map(armorCard).join("")}</div>` : `<div class="todo">没有找到防具。</div>`;
   else body = rel.map(r => `<div class="relh"><img src="${r.icon}" alt=""><div><b>${r.label}</b>的装备<div class="note-s">${r.note || ""}</div></div></div>
       <div class="eqs">${r.eq.weapons.sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type)).map(weaponCard).join("")}${r.eq.armor.map(armorCard).join("")}</div>`).join("");

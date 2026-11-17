@@ -73,7 +73,13 @@ def fextra(en):
     s = open(page, encoding="utf-8", errors="ignore").read()
     plain = lambda t: unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()   # é → e
     slug = re.sub(r"[^a-z0-9]", "", plain(en).lower())
-    for u in re.findall(r'src="(https://static0\.fextralifeimages\.com/file/monsterhunterrise/[^"]+?\.png)"', s):
+    cands = re.findall(r'src="(https://static0\.fextralifeimages\.com/file/monsterhunterrise/[^"]+?\.png)"', s)
+    infobox = None   # 同一条武器线外观相同：页面第一张武器图（可能用的是这条线最早的名字）
+    for u in cands:
+        fn = u.rsplit("/", 1)[1].lower()
+        if "wiki-guide" in fn and not any(x in fn for x in ("ammo", "rare-", "mhw-", "icon", "_24px", "zenny", "decor", "gem_")):
+            infobox = u; break
+    for u in cands:
         fn = u.rsplit("/", 1)[1].lower()
         if "ammo" in fn or fn.startswith("rare-") or "wiki-guide" not in fn: continue
         base = re.sub(r"[^a-z0-9]", "", plain(urllib.parse.unquote(fn)).split("mhr")[0].split("monster")[0])
@@ -81,6 +87,10 @@ def fextra(en):
             raw = os.path.join(DL, "fxi_" + fn)
             if not os.path.exists(raw): curl(u, raw)
             return save_render(raw, "fx_" + re.sub(r"\W+", "_", en) + ".png")
+    if infobox and not en.endswith(" Set"):
+        fn = infobox.rsplit("/", 1)[1].lower(); raw = os.path.join(DL, "fxi_" + fn)
+        if not os.path.exists(raw): curl(infobox, raw)
+        return save_render(raw, "fx_" + re.sub(r"\W+", "_", en) + ".png")
     return None
 
 def fname(en): return "MHRS-" + re.sub(r"\s+", "_", en.strip())
